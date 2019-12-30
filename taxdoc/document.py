@@ -10,28 +10,30 @@ from reportlab.lib import pdfencrypt
 from reportlab.lib import colors
 
 DEFAULT_PATH = os.path.dirname(os.path.realpath(__file__))
-
-
-def font_path():
-    return DEFAULT_PATH + "/default_font.ttf"
-
-
-def sign_path():
-    return DEFAULT_PATH + "/default_sign.png"
-
-
-pdfmetrics.registerFont(TTFont("default_font", font_path()))
-styles = getSampleStyleSheet()
-styles.add(ParagraphStyle(name="default", fontName="default_font", alignment=1))
-styles.add(ParagraphStyle(name="left", fontName="default_font", alignment=0, leftIndent=10))
-styles.add(ParagraphStyle(name="right", fontName="default_font", alignment=2))
-styles.add(ParagraphStyle(name="group_sign", fontName="default_font", fontSize=12, alignment=2, rightIndnt=20))
-styles.add(ParagraphStyle(name="head_seq", fontName="default_font", fontSize=9, alignment=1))  # 일련번호
-styles.add(ParagraphStyle(name="head_title", fontName="default_font", fontSize=20, alignment=1))  # 기부금영수증
-styles.add(ParagraphStyle(name="sub_title", fontName="default_font", leftIndent=5))  # 기부금영수증
-
+FONT_PATH = None
+SIGN_PATH = DEFAULT_PATH + "/default_sign.png"
 USER_DATE = "2020 년 1월 2일"
 GROUP_DATE = "2020 년 1월 2일"
+styles = None
+
+
+def style_load():
+    global FONT_PATH, styles
+    if styles:
+        print("[SKIP] styles is loaded !!!")
+        return
+    if FONT_PATH is None:
+        FONT_PATH = DEFAULT_PATH + "/default_font.ttf"
+
+    pdfmetrics.registerFont(TTFont("default_font", FONT_PATH))
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name="default", fontName="default_font", alignment=1))
+    styles.add(ParagraphStyle(name="left", fontName="default_font", alignment=0, leftIndent=10))
+    styles.add(ParagraphStyle(name="right", fontName="default_font", alignment=2))
+    styles.add(ParagraphStyle(name="group_sign", fontName="default_font", fontSize=12, alignment=2, rightIndnt=20))
+    styles.add(ParagraphStyle(name="head_seq", fontName="default_font", fontSize=9, alignment=1))  # 일련번호
+    styles.add(ParagraphStyle(name="head_title", fontName="default_font", fontSize=20, alignment=1))  # 기부금영수증
+    styles.add(ParagraphStyle(name="sub_title", fontName="default_font", leftIndent=5))  # 기부금영수증
 
 
 class TaxPdfCreator:
@@ -43,6 +45,7 @@ class TaxPdfCreator:
         @price_date : 조합비 납입일자 범위
         @price_all : 조합비 합계
         """
+        style_load()
         if not isinstance(price_all, int):
             raise Exception("price_all is not integer")
         self._elements = []
@@ -237,7 +240,7 @@ class TaxPdfCreator:
         @date : 날짜
         @group_name : 조합이름
         """
-        im = Image(sign_path(), width=15 * mm, height=15 * mm)
+        im = Image(SIGN_PATH, width=15 * mm, height=15 * mm)
         group_sign = Table([[Paragraph(group_name, style=styles["group_sign"]), im]], colWidths=[128 * mm, 20 * mm])
         group_sign.setStyle(TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
