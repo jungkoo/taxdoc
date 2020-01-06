@@ -11,7 +11,7 @@ INPUT_FILE_PATH = "./input/taxdoc_input_sample.txt"
 SMTP_DOMAIN = "smtp.dooray.com"
 SMTP_PORT = 465
 SMTP_EMAIL = "admin@naverunion.dooray.com"
-SMTP_PASSWORD = "암호"
+SMTP_PASSWORD = "<암호>"
 
 TITLE = "[테스트] 2019년 귀속 연말정산용 기부금 영수증 발급 (test222 발송)"
 CONTENTS = """
