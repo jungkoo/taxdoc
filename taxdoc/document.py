@@ -20,8 +20,9 @@ styles = None
 def style_load():
     global FONT_PATH, styles
     if styles:
-        print("[SKIP] styles is loaded !!!")
         return
+    else:
+        print("[WARN] styles load !!!")
     if FONT_PATH is None:
         FONT_PATH = DEFAULT_PATH + "/default_font.ttf"
 
