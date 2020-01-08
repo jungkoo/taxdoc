@@ -53,6 +53,11 @@ if __name__ == "__main__":
             fd_email.write(str(u))
             fd_email.write("\n")
 
+        # email session limit 100 send. (100 over reconnect)
+        if email_count % 100 == 0 and email_count != 0:
+            email_sender.close()
+            email_sender = EmailSender(domain=SMTP_DOMAIN, port=SMTP_PORT, email=SMTP_EMAIL, password=SMTP_PASSWORD)
+
     fd_offline.close()
     fd_email.close()
     email_sender.close()
