@@ -57,7 +57,7 @@ class TaxPdfCreator:
         self.corp_name = "전국화학섬유식품\n산업노동조합"
         self.corp_id = "107-82-63961"
         self.corp_address = "서울 동작구 장승배기로 98 장승빌딩 5층"
-        self.price_type_name = "종료단체 외\n지정기부금"
+        self.price_type_name = "종교단체 외\n지정기부금"
         self.price_type_code = "40"
         self.price_type_contents = "노동조합비"
         self.price_date = price_date
