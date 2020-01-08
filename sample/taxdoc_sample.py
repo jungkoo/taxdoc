@@ -36,7 +36,8 @@ if __name__ == "__main__":
     email_count = 0
     email_sender = EmailSender(domain=SMTP_DOMAIN, port=SMTP_PORT, email=SMTP_EMAIL, password=SMTP_PASSWORD)
     for u in union_member_generator(INPUT_FILE_PATH, first_line_skip=True):
-        tax = TaxPdfCreator(doc_id=u.doc_id, user_name=u.user_name, user_id=u.user_id if len(u.user_id) == 0 else None,
+        tax = TaxPdfCreator(doc_id=u.doc_id, user_name=u.user_name,
+                            user_id="" if u.user_id is None or len(u.user_id) == 0 else u.user_id,
                             price_date=u.pay_date, price_all=int(u.pay_sum))
         print(str(u))
         if len(u.user_email) == 0:
