@@ -32,6 +32,10 @@ def _pay_info_format(pay_info, year):
     return "{}~{}".format(begin, end), pay_sum
 
 
+def _create_user_key(user):
+    return "{}~{}".format(user["user_name"], user["phone_number"])
+
+
 class TheBillCrawler:
     """
     the bill 에서 납주 정보를 추출한다
@@ -59,8 +63,29 @@ class TheBillCrawler:
             raise Exception("LOGIN ERROR")
 
     def search(self, year):
+        data_generator = self._search_for_data(year, status_cd=None, sort_cd1="02", sort_cd2="A")
+        if data_generator is None:
+            return
+        current = next(data_generator)
+        for user in data_generator:
+            if _create_user_key(current) == _create_user_key(user):
+                user_name = current["user_name"]
+                phone_number = current["phone_number"]
+                pay_sum = current["pay_sum"] + user["pay_sum"]
+                t1 = current["pay_date"].split("~")
+                t2 = user["pay_date"].split("~")
+                pay_date = "{}~{}".format(min(t1[0].strip(), t2[0].strip()), max(t1[1].strip(), t1[1].strip()))
+                current = dict(user_name=user_name, phone_number=phone_number, pay_date=pay_date, pay_sum=pay_sum)
+                continue
+            else:
+                yield current
+                current = user
+        if current is not None:
+            yield current
+
+    def _search_for_data(self, year, status_cd="04", sort_cd1="01", sort_cd2="D"):
         r = self.login_session.post(_pay_list_member,
-                                    headers=_header, data={"sortGubn1": "01", "sortGubn2": "D", "serviceType": "",
+                                    headers=_header, data={"sortGubn1": sort_cd1, "sortGubn2": sort_cd2, "serviceType": "",
                                                            "memberName": "", "memberId": "", "srchCusGubn1": "",
                                                            "srchCusGubn2": "", "pageno": "1"})
         res = r.json()
@@ -68,12 +93,12 @@ class TheBillCrawler:
         for page_num in range(1, int(page_cnt)+1):
             r = self.login_session.post(_pay_list_member,
                                         headers=_header,
-                                        data={"sortGubn1": "01", "sortGubn2": "D", "serviceType": "", "memberName": "",
+                                        data={"sortGubn1": sort_cd1, "sortGubn2": sort_cd2, "serviceType": "", "memberName": "",
                                               "memberId": "", "srchCusGubn1": "", "srchCusGubn2": "",
                                               "pageno": str(page_num)})
             res = r.json()
             for member_info_list in res['resultList']:
-                if(member_info_list['statusCd'] == "04"
+                if((member_info_list['statusCd'] == status_cd or status_cd is None)
                    and member_info_list['paySeq'] is not None and member_info_list['lastSendDt'] is not None
                    and int(member_info_list['paySeq']) > 0):
                     result_html = self.login_session.get(_pay_info_url.format(member_info_list['memberNo'])).text
