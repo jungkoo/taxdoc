@@ -66,22 +66,22 @@ class TheBillCrawler:
         data_generator = self._search_for_data(year, status_cd=None, sort_cd1="02", sort_cd2="A")
         if data_generator is None:
             return
-        current = next(data_generator)
-        for user in data_generator:
-            if _create_user_key(current) == _create_user_key(user):
-                user_name = current["user_name"]
-                phone_number = current["phone_number"]
-                pay_sum = current["pay_sum"] + user["pay_sum"]
-                t1 = current["pay_date"].split("~")
-                t2 = user["pay_date"].split("~")
+        pre = next(data_generator)
+        for current in data_generator:
+            if _create_user_key(pre) == _create_user_key(current):
+                user_name = pre["user_name"]
+                phone_number = pre["phone_number"]
+                pay_sum = pre["pay_sum"] + current["pay_sum"]
+                t1 = pre["pay_date"].split("~")
+                t2 = current["pay_date"].split("~")
                 pay_date = "{}~{}".format(min(t1[0].strip(), t2[0].strip()), max(t1[1].strip(), t1[1].strip()))
-                current = dict(user_name=user_name, phone_number=phone_number, pay_date=pay_date, pay_sum=pay_sum)
+                pre = dict(user_name=user_name, phone_number=phone_number, pay_date=pay_date, pay_sum=pay_sum)
                 continue
             else:
-                yield current
-                current = user
-        if current is not None:
-            yield current
+                yield pre
+                pre = current
+        if pre is not None:
+            yield pre
 
     def _search_for_data(self, year, status_cd="04", sort_cd1="01", sort_cd2="D"):
         r = self.login_session.post(_pay_list_member,
