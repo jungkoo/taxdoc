@@ -32,6 +32,69 @@ def _pay_info_format(pay_info, year):
     return "{}~{}".format(begin, end), pay_sum
 
 
+def _create_user_key(user):
+    return "{}~{}".format(user["user_name"], user["phone_number"])
+
+
+def _merge_data(data_generator):
+    """
+    (before)
+    홍길동	010-0000-0001	2019.09 ~ 2019.12	120000
+    홍길동	010-0000-9999	2019.01 ~ 2019.12	360000
+    홍길동	010-0000-0001	2019.01 ~ 2019.08	240000
+
+    (after)
+    홍길동	010-0000-9999	2019.01 ~ 2019.12	360000
+    홍길동	010-0000-0001	2019.01 ~ 2019.12	360000
+    """
+    if data_generator is None:
+        return
+    sam_name_mapper = {}
+
+    def _phone_number_merge_reduce(_pre):
+        """
+        이름정렬 되어있는 경우, 전화번호 중복을 체크해 값을 합쳐준다.
+        """
+        if _pre is not None:
+            if pre["phone_number"] in sam_name_mapper:
+                sam_name_mapper[_pre["phone_number"]].append(_pre)
+            else:
+                yield _pre
+        if len(sam_name_mapper) <= 0:
+            return None
+        for _k in sam_name_mapper:
+            _merge = sam_name_mapper[_k][0]
+            for _m in sam_name_mapper[_k][1:]:
+                if _m["user_name"] == _merge["user_name"] and _m["phone_number"] == _merge["phone_number"]:
+                    _merge["pay_sum"] += _m["pay_sum"]
+                    _t1 = _merge["pay_date"].split("~")
+                    _t2 = _m["pay_date"].split("~")
+                    _merge["pay_date"] = "{} ~ {}".format(min(_t1[0].strip(), _t2[0].strip()),
+                                                          max(_t1[1].strip(), _t2[1].strip()))
+                else:
+                    raise Exception("duplicate error")
+            yield _merge
+        sam_name_mapper.clear()
+
+    pre = next(data_generator)
+
+    for current in data_generator:
+        if pre["user_name"] == current["user_name"]:
+            if pre["phone_number"] not in sam_name_mapper:
+                sam_name_mapper[pre["phone_number"]] = [pre, ]
+            else:
+                sam_name_mapper[pre["phone_number"]].append(pre)
+        else:
+            for _x in _phone_number_merge_reduce(pre):
+                yield _x
+
+        # 최근껀 이전값으로 유지
+        pre = current
+    # end
+    for _x in _phone_number_merge_reduce(pre):
+        yield _x
+
+
 class TheBillCrawler:
     """
     the bill 에서 납주 정보를 추출한다
@@ -59,8 +122,12 @@ class TheBillCrawler:
             raise Exception("LOGIN ERROR")
 
     def search(self, year):
+        for _r in _merge_data(self._search_for_data(year, status_cd=None, sort_cd1="02", sort_cd2="A")):
+            yield _r
+
+    def _search_for_data(self, year, status_cd="04", sort_cd1="01", sort_cd2="D"):
         r = self.login_session.post(_pay_list_member,
-                                    headers=_header, data={"sortGubn1": "01", "sortGubn2": "D", "serviceType": "",
+                                    headers=_header, data={"sortGubn1": sort_cd1, "sortGubn2": sort_cd2, "serviceType": "",
                                                            "memberName": "", "memberId": "", "srchCusGubn1": "",
                                                            "srchCusGubn2": "", "pageno": "1"})
         res = r.json()
@@ -68,12 +135,12 @@ class TheBillCrawler:
         for page_num in range(1, int(page_cnt)+1):
             r = self.login_session.post(_pay_list_member,
                                         headers=_header,
-                                        data={"sortGubn1": "01", "sortGubn2": "D", "serviceType": "", "memberName": "",
+                                        data={"sortGubn1": sort_cd1, "sortGubn2": sort_cd2, "serviceType": "", "memberName": "",
                                               "memberId": "", "srchCusGubn1": "", "srchCusGubn2": "",
                                               "pageno": str(page_num)})
             res = r.json()
             for member_info_list in res['resultList']:
-                if(member_info_list['statusCd'] == "04"
+                if((member_info_list['statusCd'] == status_cd or status_cd is None)
                    and member_info_list['paySeq'] is not None and member_info_list['lastSendDt'] is not None
                    and int(member_info_list['paySeq']) > 0):
                     result_html = self.login_session.get(_pay_info_url.format(member_info_list['memberNo'])).text
