@@ -64,13 +64,21 @@ class EmailSender:
 
 
 _PPURIO_SEND_API_URL = "https://www.ppurio.com/api/send_utf8_json.php"
-_PPURIO_CANCEL_API_URL = "https://www.ppurio.com/api/cancel_utf8_json.php"
+# _PPURIO_CANCEL_API_URL = "https://www.ppurio.com/api/cancel_utf8_json.php"
 _PPURIO_CALLBACK_PHONE_NUMBER = "01097301804"
 _PPURIO_USER_ID = "naverunion"
 SMS_USER = collections.namedtuple("SMS_USER", 'name phone_number')
 
 
 class SendMessage:
+    """
+    sms = SendMessage("본문입니다. 문자발송 테스트중입니다.")
+    sms.add_user("01025746431", "정민철")
+    sms.add_user("099-3780-3940", "에러")
+    sms.add_user("010-9504-2646", "박재우")
+    sms.add_user("010-3780-3940", "문현식")
+    sms.send()
+    """
     def __init__(self, msg, subject=""):
         self._data = {
             "userid": _PPURIO_USER_ID,
@@ -81,8 +89,10 @@ class SendMessage:
             "appdate": "",
             "subject": subject
         }
-        self._header = {'User-Agent': 'Mozilla/5.0', 'Content-Type': 'application/json; charset=UTF-8'}
         self._users = []
+
+    def count(self):
+        return len(self._users)
 
     def add_user(self, phone_number, name=""):
         self._users.append(SMS_USER(name=name, phone_number=phone_number))
@@ -99,10 +109,12 @@ class SendMessage:
         msg += "userid   : " + self._data["userid"] + "\n"
         msg += "subject  : " + self._data["subject"] + "\n"
         msg += "callback : " + self._data["callback"] + "\n"
-        msg += "names    : " + self._names() + "\n"
+        # msg += "names    : " + self._names() + "\n"
         msg += "phone    : " + self._phones() + "\n"
         msg += "appdate  : " + self._data["appdate"] + "\n"
+        msg += "count    : " + str(self.count()) + "\n"
         msg += "msg      : " + self._data["msg"]
+
         return msg
 
     def debug_print(self):
@@ -113,10 +125,11 @@ class SendMessage:
             raise Exception("empty subject or msg")
         if len(self._users) <= 0:
             raise Exception("send user is empty (add user)")
+
         params = dict()
         params.update(self._data)
         params["phone"] = self._phones()
-        params["names"] = self._names()
+        # params["names"] = self._names()
         data = urllib.parse.urlencode(params)
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         req = urllib.request.Request(_PPURIO_SEND_API_URL, data.encode("utf-8"))
@@ -125,14 +138,7 @@ class SendMessage:
         if result:
             rsb = json.loads(result)
             ret_msg = rsb["result"]
-            if ret_msg != "ok":
+            if ret_msg == "ok":
+                return int(rsb["ok_cnt"])
+            else:
                 raise Exception("sms send error : " + ret_msg)
-
-
-if __name__ == "__main__":
-    sms = SendMessage("공동성명입니다. test 님. 테스트입니다. 안녕하세요.")
-    sms.add_user("010-2574-6431", "정민철")
-    # sms.add_user("010-9504-2646", "박재우")
-    # sms.add_user("010-3780-3940", "문현식")
-    sms.debug_print()
-    sms.send()
