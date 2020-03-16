@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 import requests
 import json
-
+import re
 _base_url = "https://www.thebill.co.kr"
 _authentication_url = "https://www.thebill.co.kr/webuser/loginProc.json"
 _header = {'User-Agent': 'Mozilla/5.0', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}
+
 
 def filter_dict(data, *keys):
     if keys:
@@ -48,7 +49,7 @@ class TheBillAPI:
                 'loginid': self.user_id,
                 'loginpw': self.user_pass
                 }
-        r = self.login_session.get(_base_url, headers=_header)
+        self.login_session.get(_base_url, headers=_header)
         r = self.login_session.post(_authentication_url, headers=_header, data=data)
         if r.json()['resultMsg'] != "":
             raise Exception("LOGIN ERROR")
@@ -70,5 +71,17 @@ class TheBillAPI:
         req_data = {"sortGubn1": "01", "sortGubn2": "D", "setListPerPage": "100", "invoiceSt": "00",
                     "startDate": start_date, "endDate": end_date}
         for row in self._result_list(seed_url, **req_data):
-            yield filter_dict(row, "memberName", "serviceType", "lastResultMsg", "sendDt", "retryDt1")
+            yield filter_dict(row, "memberName", "serviceType", "lastResultMsg", "sendDt", "retryDt1", "memberNo")
+
+    def get_phone_number(self, member_no):
+        """
+        전화번호를 찾기위해 멤버번호를 통해 정보를 추출한다.
+        """
+        seed_url = "https://www.thebill.co.kr/cms2/popup/cmsMemEntry.tb?workflag=update&memberno={}".format(member_no)
+        r = self.login_session.get(seed_url, headers=_header, data=None)
+        if r.status_code == 200:
+            val = re.findall(r'name\s*=\s*\"hpNo\".*\"([0-9\-]{12,13})\"', r.text)
+            return val[0] if len(val) > 0 else None
+        else:
+            return None
 
