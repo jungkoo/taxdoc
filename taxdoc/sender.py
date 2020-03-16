@@ -64,7 +64,6 @@ class EmailSender:
 
 
 _PPURIO_SEND_API_URL = "https://www.ppurio.com/api/send_utf8_json.php"
-# _PPURIO_CANCEL_API_URL = "https://www.ppurio.com/api/cancel_utf8_json.php"
 _PPURIO_CALLBACK_PHONE_NUMBER = "01097301804"
 _PPURIO_USER_ID = "naverunion"
 SMS_USER = collections.namedtuple("SMS_USER", 'name phone_number')
@@ -73,13 +72,11 @@ SMS_USER = collections.namedtuple("SMS_USER", 'name phone_number')
 class SendMessage:
     """
     sms = SendMessage("본문입니다. 문자발송 테스트중입니다.")
-    sms.add_user("01025746431", "정민철")
+    sms.add_user("01012345678", "이름")
     sms.add_user("099-3780-3940", "에러")
-    sms.add_user("010-9504-2646", "박재우")
-    sms.add_user("010-3780-3940", "문현식")
     sms.send()
     """
-    def __init__(self, msg, subject=""):
+    def __init__(self, msg=""):
         self._data = {
             "userid": _PPURIO_USER_ID,
             "callback": _PPURIO_CALLBACK_PHONE_NUMBER,
@@ -87,9 +84,10 @@ class SendMessage:
             "msg": msg,
             "names": "",
             "appdate": "",
-            "subject": subject
+            "subject": ""
         }
         self._users = []
+        self.message(msg)
 
     def count(self):
         return len(self._users)
@@ -109,18 +107,19 @@ class SendMessage:
         msg += "userid   : " + self._data["userid"] + "\n"
         msg += "subject  : " + self._data["subject"] + "\n"
         msg += "callback : " + self._data["callback"] + "\n"
-        # msg += "names    : " + self._names() + "\n"
+        msg += "names    : " + self._names() + "\n"
         msg += "phone    : " + self._phones() + "\n"
         msg += "appdate  : " + self._data["appdate"] + "\n"
-        msg += "count    : " + str(self.count()) + "\n"
         msg += "msg      : " + self._data["msg"]
-
         return msg
 
     def debug_print(self):
         print(self.debug())
 
-    def send(self):
+    def send(self, subject=""):
+        """
+        subject 는 발송이력을 위한 타이틀이다.
+        """
         if self._data["subject"] is None or self._data["msg"] is None:
             raise Exception("empty subject or msg")
         if len(self._users) <= 0:
@@ -129,7 +128,8 @@ class SendMessage:
         params = dict()
         params.update(self._data)
         params["phone"] = self._phones()
-        # params["names"] = self._names()
+        params["names"] = self._names()
+        params["subject"] = subject
         data = urllib.parse.urlencode(params)
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         req = urllib.request.Request(_PPURIO_SEND_API_URL, data.encode("utf-8"))
