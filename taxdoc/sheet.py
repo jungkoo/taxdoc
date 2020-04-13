@@ -42,6 +42,8 @@ class GoogleFormSheet:
             return None
 
     def find_date(self, start_date, end_date=datetime.today(), start_seq=2):
+        if self._count < start_seq:
+            raise Exception("row_values(sequence) : sequence over number !!!")
         seq = start_seq
         for row in self._sheet.get("A{}:A".format(start_seq)):
             # [2018, 3, 15, 2, 5, 45]
@@ -75,13 +77,18 @@ class HistoryFormSheet:
         self._date = datetime(1980, 1, 1)
 
     def more(self):
+        cnt = 0
         try:
             for row in self._sheet.find_date(start_date=self._date, start_seq=self._next_seq):
                 self._date = GoogleFormSheet.convert_date(row[0])
                 self._next_seq += 1
+                cnt += 1
                 yield row
         finally:
-            self.save_history_item()
+            if cnt > 0:
+                self.save_history_item()
+            else:
+                print("# empty value !!!  (next sequence: {})".format(self._next_seq))
 
     def get_history_item(self):
         return self._db.search(where('url') == self._sheet.url and where('sheet_name') == self._sheet.sheet_name)
