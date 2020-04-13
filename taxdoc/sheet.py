@@ -16,16 +16,13 @@ from datetime import datetime
 import gspread
 import re
 from oauth2client.service_account import ServiceAccountCredentials
-scope = [
-'https://spreadsheets.google.com/feeds',
-'https://www.googleapis.com/auth/drive',
-]
+_scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
 _json_file_name = 'google_auth.json'
 
 
 class GoogleFormSheet:
     def __init__(self, url, sheet_name="설문지 응답 시트1", auth_json_path=_json_file_name):
-        credentials = ServiceAccountCredentials.from_json_keyfile_name(auth_json_path, scope)
+        credentials = ServiceAccountCredentials.from_json_keyfile_name(auth_json_path, _scope)
         gc = gspread.authorize(credentials)
         self._sheet = None
         self._count = 0
@@ -42,7 +39,7 @@ class GoogleFormSheet:
     def get_row(self, row_seq):
         return self._sheet.row_values(row_seq)
 
-    def find_date(self, start_date, end_date):
+    def find_date(self, start_date, end_date=datetime.today()):
         seq = 2
         for row in self._sheet.get("A2:A"):
             # [2018, 3, 15, 2, 5, 45]
