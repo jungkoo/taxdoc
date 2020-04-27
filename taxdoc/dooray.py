@@ -9,7 +9,10 @@ Schedule = namedtuple('Schedule', 'start end contents')
 class DooraySchedule:
     def __init__(self, user, passwd, domain="naverunion"):
         option = webdriver.ChromeOptions()
-        # option.headless = True
+        option.headless = True
+        option.add_argument('--lang=ko-KR')
+        option.add_argument('--user-agent="Chrome/37.0.2049.0 Safari/537.36"')
+        option.add_argument("window-size=1024x768")
         driver_path = os.path.abspath(__file__).replace("dooray.py", "chromedriver")
         self._url = "https://{}.dooray.com".format(domain)
         d = webdriver.Chrome(driver_path, chrome_options=option)
