@@ -7,8 +7,11 @@ import os
 Schedule = namedtuple('Schedule', 'date contents')
 
 
-def str_to_date(sdt):
-    return datetime.strptime(sdt, "%Y-%m-%d")  # %H:%M:%S
+def date_to_str(sdt):
+    if sdt:
+        return sdt.strftime("%Y/%m/%d")  # %H:%M:%S
+    else:
+        return "-"
 
 
 def today():
@@ -22,7 +25,7 @@ def normalized_date(date_str=""):
         20.01.15     20/01/15
         01.15        01/15
     """
-    t = date_str.strip().replace(".", "/").split("/")
+    t = date_str.strip().replace(".", "/").replace("-", "/").split("/")
     if len(t) == 3:
         if len(t[0]) == 4:
             # yyyy/mm/dd
@@ -119,7 +122,7 @@ class DooraySchedule:
         # 일간 프로젝트로 변경
         d.find_element_by_css_selector("span.calendar-date-navigation button.dropdown-toggle").click()
         d.find_element_by_css_selector("span.calendar-date-navigation ul.dropdown-menu li:first-child").click()
-        dt_str = str_to_date(normalized_date(d.find_element_by_css_selector("span.calendar-date").text.strip()))
+        dt_str = date_to_str(normalized_date(d.find_element_by_css_selector("span.calendar-date").text.strip()))
 
         result = []
         for row in d.find_elements_by_css_selector(".tui-full-calendar-weekday-schedule-title") or []:
@@ -142,10 +145,11 @@ class DooraySchedule:
             if len(status) <= 0 or status[0] == "완료":
                 continue
             title = row.find_element_by_css_selector("span.subject").text
+            today_str = date_to_str(today()) + " __:__"
             if today() not in parse_project_title_date_list(title):  # 오늘 이슈인지
                 continue
 
-            result.append(Schedule("", "", title))
+            result.append(Schedule(today_str,  title))
         return result
 
     def close(self):
