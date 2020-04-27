@@ -96,8 +96,8 @@ def parse_project_title_date_list(title=""):
 
 
 class DooraySchedule:
-    def __init__(self, user, passwd, domain="naverunion",
-                 driver_path=os.path.abspath(__file__).replace("dooray.py", "chromedriver")):
+    def __init__(self, user, passwd,
+                 driver_path=os.path.abspath(__file__).replace("dooray.py", "chromedriver"), domain="naverunion"):
         option = webdriver.ChromeOptions()
         option.headless = True
         option.add_argument('--lang=ko-KR')
