@@ -110,8 +110,8 @@ class DooraySchedule:
         d = webdriver.Chrome(driver_path, chrome_options=option)
         d.implicitly_wait(3)
         d.get(self._url)
-        d.find_element_by_css_selector("input[title=\"아이디\"]").send_keys(user)
-        d.find_element_by_css_selector("input[title=\"비밀번호\"]").send_keys(passwd)
+        d.find_element_by_css_selector("input[type='text'][autocomplete='new-password']").send_keys(user)
+        d.find_element_by_css_selector("input[type='password'][autocomplete='new-password']").send_keys(passwd)
         d.find_element_by_css_selector("button[type=\"submit\"]").click()
         self._driver = d
 
