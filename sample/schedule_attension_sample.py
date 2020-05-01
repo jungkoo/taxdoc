@@ -6,7 +6,7 @@ from datetime import datetime
 
 if __name__ == "__main__":
     dooray = DooraySchedule("아이디", "패스워드", "chromedriver경로")
-    bot_hook_url = "https://hook.dooray.com/services/2185355349700794521/2731951412316204138/1i_-Cqr4TNeb83BCZAojsg"
+    bot_hook_url = "https://hook.dooray.com/services/21853....Aojsg"
     count = 0
     msg = "## {} 일정리스트업 ##\n".format(datetime.now().strftime("%Y-%m-%d"))
 
