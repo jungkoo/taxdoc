@@ -8,10 +8,12 @@ from tinydb import TinyDB, Query, where
 
 _scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 _json_file_name = 'google_auth.json'
+_TIMESTAMP_COLUMN_LIST = "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z".split()
+_TIMESTAMP_COLUMN_MAP = {_TIMESTAMP_COLUMN_LIST[i]: i for i in range(0, len(_TIMESTAMP_COLUMN_LIST))}
 
 
 class GoogleFormSheet:
-    def __init__(self, url, sheet_name="설문지 응답 시트1", auth_json_path=_json_file_name):
+    def __init__(self, url, sheet_name="설문지 응답 시트1", auth_json_path=_json_file_name, timestamp_column_name="A"):
         credentials = ServiceAccountCredentials.from_json_keyfile_name(auth_json_path, _scope)
         gc = gspread.authorize(credentials)
         self._sheet = None
@@ -19,6 +21,7 @@ class GoogleFormSheet:
         self.url = url
         self.sheet_name = sheet_name
         self._doc = gc.open_by_url(url)
+        self._timestamp_column_name = timestamp_column_name
         self.change_worksheet(sheet_name)
 
     def change_worksheet(self, sheet_name):
@@ -45,7 +48,8 @@ class GoogleFormSheet:
         if self._count < start_seq:
             raise Exception("row_values(sequence) : sequence over number !!!")
         seq = start_seq
-        for row in self._sheet.get("A{}:A".format(start_seq)):
+        for row in self._sheet.get("{timestamp_column_name}{start_seq}:{timestamp_column_name}".format(
+                **{"start_seq": start_seq, "timestamp_column_name": self._timestamp_column_name})):
             # [2018, 3, 15, 2, 5, 45]
             dt = GoogleFormSheet.convert_date(row[0])
             if start_date <= dt <= end_date:
@@ -65,22 +69,23 @@ class HistoryFormSheet:
     """
     마지막으로 읽어들인 날짜와 seq 값을 저장했다가, 그 이후부터 읽어내는 구
     """
-    def __init__(self, google_form_sheet, db_path="./history.json"):
+    def __init__(self, google_form_sheet, db_path="./history.json", seed_next_seq=2, seed_date=datetime(2018, 1, 1)):
+        self._next_seq = seed_next_seq
+        self._date = seed_date
         self._db = TinyDB(db_path)
-        self._next_seq = 2
-        self._date = datetime(1980, 1, 1)
         self._sheet = google_form_sheet
+        self._timestamp_column_index = _TIMESTAMP_COLUMN_MAP[google_form_sheet._timestamp_column_name]
         self.load_history_item()
 
     def init_history(self):
         self._next_seq = 2
-        self._date = datetime(1980, 1, 1)
+        self._date = datetime(2018, 1, 1)
 
     def more(self):
         cnt = 0
         try:
             for row in self._sheet.find_date(start_date=self._date, start_seq=self._next_seq):
-                self._date = GoogleFormSheet.convert_date(row[0])
+                self._date = GoogleFormSheet.convert_date(row[self._timestamp_column_index])
                 self._next_seq += 1
                 cnt += 1
                 yield row
@@ -98,6 +103,9 @@ class HistoryFormSheet:
         if len(data) > 0:
             self._next_seq = data[0]["next_seq"]
             self._date = str_to_date(data[0]["date"])
+            return True
+        else:
+            return False
 
     def save_history_item(self):
         data = self.get_history_item()
