@@ -22,6 +22,7 @@ class GoogleFormSheet:
         self.sheet_name = sheet_name
         self._doc = gc.open_by_url(url)
         self._timestamp_column_name = timestamp_column_name
+        self._timestamp_column_index = _TIMESTAMP_COLUMN_MAP[timestamp_column_name]
         self.change_worksheet(sheet_name)
 
     def change_worksheet(self, sheet_name):
@@ -45,15 +46,19 @@ class GoogleFormSheet:
             return None
 
     def find_date(self, start_date, end_date=datetime.today(), start_seq=2):
+        seq, value = self.find_date_with_seq(start_date, end_date, start_seq)
+        return value
+
+    def find_date_with_seq(self, start_date, end_date=datetime.today(), start_seq=2):
         if self._count < start_seq:
             raise Exception("row_values(sequence) : sequence over number !!!")
         seq = start_seq
         for row in self._sheet.get("{timestamp_column_name}{start_seq}:{timestamp_column_name}".format(
                 **{"start_seq": start_seq, "timestamp_column_name": self._timestamp_column_name})):
             # [2018, 3, 15, 2, 5, 45]
-            dt = GoogleFormSheet.convert_date(row[0])
+            dt = GoogleFormSheet.convert_date(row[0])  # 0 은 고정
             if start_date <= dt <= end_date:
-                yield self._sheet.row_values(seq)
+                yield seq, self._sheet.row_values(seq)
             seq += 1
 
 
@@ -84,9 +89,9 @@ class HistoryFormSheet:
     def more(self):
         cnt = 0
         try:
-            for row in self._sheet.find_date(start_date=self._date, start_seq=self._next_seq):
+            for seq, row in self._sheet.find_date_with_seq(start_date=self._date, start_seq=self._next_seq):
                 self._date = GoogleFormSheet.convert_date(row[self._timestamp_column_index])
-                self._next_seq += 1
+                self._next_seq = seq + 1
                 cnt += 1
                 yield row
         finally:
