@@ -136,10 +136,10 @@ class CafeUserCheckBox:
         _id = self._value.id
         self.element = self._parent.get_element(By.CSS_SELECTOR, "input[name='applyMemberCheck'][value='{}']".format(_id))
 
-    def __set__(self, instance, value: CafeUser):
+    def set(self, value: CafeUser):
         self._value = value
 
-    def __get__(self, instance, owner):
+    def get(self):
         return self._value
 
     def is_checked(self):
