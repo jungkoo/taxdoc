@@ -10,35 +10,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 CafeUser = namedtuple('CafeUser', 'id nick age gender date reply')
 
 
-class CafeUsers:
-    def __init__(self, ncafe_auto_join):
-        self._parent = ncafe_auto_join
-        self._users = list()
-
-    def add(self, user):
-        self._users.append(user)
-
-    def filter(self, function_or_None):
-        cafe_users = CafeUsers(self._parent)
-        for user in self._users:
-            if function_or_None(user):
-                cafe_users.add(user)
-        return cafe_users
-
-    def checked(self):
-        for user in self._users:
-            _c = self._parent.get_element(By.CSS_SELECTOR, "input[name='applyMemberCheck'][value='{}']".format(user.id))
-            if not _c.is_selected():
-                _c.click()
-        return self
-
-    def save(self):
-        action = self._parent.get_element(By.CSS_SELECTOR, "div.action_in")
-        for btn in action.find_elements_by_css_selector("a.btn_type"):
-            if btn.text.strip() == "가입승인":
-                if len(self._users) > 0:
-                    btn.click()
-        raise Exception("가입승인 실패")
+def _all_true(data):
+    return True
 
 
 class NCafeAutoJoin:
@@ -137,3 +110,34 @@ class NCafeAutoJoin:
     def close(self):
         if self._driver:
             self._driver.close()
+
+
+class CafeUsers:
+    def __init__(self, parent: NCafeAutoJoin):
+        self._parent = parent
+        self._users = list()
+
+    def add(self, user):
+        self._users.append(user)
+
+    def filter(self, function_or_None=_all_true):
+        cafe_users = CafeUsers(self._parent)
+        for user in self._users:
+            if function_or_None(user):
+                cafe_users.add(user)
+        return cafe_users
+
+    def checked(self):
+        for user in self._users:
+            _c = self._parent.get_element(By.CSS_SELECTOR, "input[name='applyMemberCheck'][value='{}']".format(user.id))
+            if not _c.is_selected():
+                _c.click()
+        return self
+
+    def save(self):
+        action = self._parent.get_element(By.CSS_SELECTOR, "div.action_in")
+        for btn in action.find_elements_by_css_selector("a.btn_type"):
+            if btn.text.strip() == "가입승인":
+                if len(self._users) > 0:
+                    btn.click()
+        raise Exception("가입승인 실패")
