@@ -10,10 +10,6 @@ from selenium.webdriver.support.wait import WebDriverWait
 CafeUser = namedtuple('CafeUser', 'id nick age gender date reply')
 
 
-def _all_true(data):
-    return True
-
-
 class NCafeAutoJoin:
     def __init__(self, driver_path, cafe_url="https://cafe.naver.com/nunion"):
         option = webdriver.ChromeOptions()
@@ -27,7 +23,6 @@ class NCafeAutoJoin:
         self._cafe_url = cafe_url
         self._driver = d
         self.club_id = 0
-        self.wait_users = set()
 
     def get_element(self, by, value, wait=False):
         """
@@ -77,11 +72,24 @@ class NCafeAutoJoin:
         club_id = url[url.index(code)+len(code):].split("&")[0]
         return club_id
 
+    # CafeUserCheckBox
     def find_wait_users(self):
-        cafe_users = CafeUsers(self)
+        """
+        유저정보 & 체크박스 컨트롤 가능한 객체 리턴
+        """
         for user in self._extract_wait_users():
-            cafe_users.add(user)
-        return cafe_users
+            yield CafeUserCheckBox(user, self)
+
+    def count(self, checked=None):
+        all_count = len(self._driver.find_elements_by_css_selector("input[name='applyMemberCheck']") or [])
+        if checked is None:
+            return all_count
+
+        checked_count = len(self._driver.find_elements_by_css_selector("input[name='applyMemberCheck']:checked") or [])
+        if checked:
+            return checked_count
+        else:
+            return all_count - checked_count
 
     def _extract_wait_users(self):
         """
@@ -101,43 +109,51 @@ class NCafeAutoJoin:
             row.find_element_by_css_selector("td:nth-child(6) > a").click()
             reply = self.get_element(By.CSS_SELECTOR,
                                      "#{}Answer>td > div > div > ol > li > p".format(nickname_id[1]), True).text
-# 예제: CafeUser(id='_gildong00', nick='hobu', age='20대 후반', gender='남', date='2020.05.11.', reply='가입처리테스트/홍길동/9998')
             yield CafeUser(id=nickname_id[1], nick=nickname_id[0], age=age, gender=gender, date=date, reply=reply)
 
     def __del__(self):
         self.close()
 
-    def close(self):
-        if self._driver:
-            self._driver.close()
-
-
-class CafeUsers:
-    def __init__(self, parent: NCafeAutoJoin):
-        self._parent = parent
-        self._users = list()
-
-    def add(self, user):
-        self._users.append(user)
-
-    def filter(self, function_or_None=_all_true):
-        cafe_users = CafeUsers(self._parent)
-        for user in self._users:
-            if function_or_None(user):
-                cafe_users.add(user)
-        return cafe_users
-
-    def checked(self):
-        for user in self._users:
-            _c = self._parent.get_element(By.CSS_SELECTOR, "input[name='applyMemberCheck'][value='{}']".format(user.id))
-            if not _c.is_selected():
-                _c.click()
-        return self
-
     def save(self):
+        if self.count() <= 0:
+            raise Exception("EMPTY Checked DATA")
         action = self._parent.get_element(By.CSS_SELECTOR, "div.action_in")
         for btn in action.find_elements_by_css_selector("a.btn_type"):
             if btn.text.strip() == "가입승인":
                 if len(self._users) > 0:
                     btn.click()
         raise Exception("가입승인 실패")
+
+    def close(self):
+        if self._driver:
+            self._driver.close()
+
+
+class CafeUserCheckBox:
+    def __init__(self, init_user: CafeUser, parent: NCafeAutoJoin):
+        self._parent = parent
+        self._value = init_user
+        _id = self._value.id
+        self.element = self._parent.get_element(By.CSS_SELECTOR, "input[name='applyMemberCheck'][value='{}']".format(_id))
+
+    def __set__(self, instance, value: CafeUser):
+        self._value = value
+
+    def __get__(self, instance, owner):
+        return self._value
+
+    def is_checked(self):
+        return self.element.is_selected()
+
+    def checked(self):
+        if not self.is_checked():
+            self.element.click()
+
+    def unchecked(self):
+        if self.is_checked():
+            self.element.click()
+
+    def __str__(self):
+        return"[{}] {}".format("O" if self.is_checked() else "X", self._value)
+
+
