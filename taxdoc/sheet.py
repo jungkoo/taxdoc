@@ -61,6 +61,17 @@ class GoogleFormSheet:
                 yield seq, self._sheet.row_values(seq)
             seq += 1
 
+    def find_keyword_all(self, *keywords):
+        seed_set = None
+        for keyword in keywords:
+            cell_set = set()
+            cell_set.update([x.row for x in self._sheet.findall(keyword)])
+            if seed_set is None:
+                seed_set = cell_set
+                continue
+            seed_set = seed_set & cell_set
+        return [self._sheet.row_values(seq) for seq in seed_set or []]
+
 
 def str_to_date(sdt):
     return datetime.strptime(sdt, "%Y-%m-%d %H:%M:%S")
