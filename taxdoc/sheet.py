@@ -62,6 +62,9 @@ class GoogleFormSheet:
             seq += 1
 
     def find_keyword_all(self, *keywords):
+        return [v for k, v in self.find_keyword_all_with_seq(*keywords)]
+
+    def find_keyword_all_with_seq(self, *keywords):
         seed_set = None
         for keyword in keywords:
             cell_set = set()
@@ -70,7 +73,7 @@ class GoogleFormSheet:
                 seed_set = cell_set
                 continue
             seed_set = seed_set & cell_set
-        return [self._sheet.row_values(seq) for seq in seed_set or []]
+        return [(seq, self._sheet.row_values(seq)) for seq in seed_set or []]
 
     @staticmethod  # 26진수, A -> 1 , AA -> 26
     def column_code_to_index(column_str):
