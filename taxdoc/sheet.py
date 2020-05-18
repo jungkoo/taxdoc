@@ -72,6 +72,14 @@ class GoogleFormSheet:
             seed_set = seed_set & cell_set
         return [self._sheet.row_values(seq) for seq in seed_set or []]
 
+    @staticmethod  # 26진수, A -> 1 , AA -> 26
+    def column_code_to_index(column_str):
+        m = {val: idx+1 for idx, val in enumerate("A B C D E F G H I J K L M N O P Q R S T U V W X Y Z".split())}
+        seq = 0
+        for idx, val in enumerate(column_str.upper()[::-1]):
+            seq += m[val] * 26 ** idx
+        return seq - 1
+
 
 def str_to_date(sdt):
     return datetime.strptime(sdt, "%Y-%m-%d %H:%M:%S")
@@ -131,7 +139,3 @@ class HistoryFormSheet:
         else:
             self._db.insert({'url': self._sheet.url, 'sheet_name': self._sheet.sheet_name,
                              'date': date_to_str(self._date), 'next_seq': self._next_seq})
-
-
-
-
