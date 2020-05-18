@@ -75,6 +75,9 @@ class GoogleFormSheet:
             seed_set = seed_set & cell_set
         return [(seq, self._sheet.row_values(seq)) for seq in seed_set or []]
 
+    def update_value(self, row_seq, column_seq, value):
+        return self._sheet.update_cell(row_seq, column_seq, value)
+
     @staticmethod  # 26진수, A -> 1 , AA -> 26
     def column_code_to_index(column_str):
         m = {val: idx+1 for idx, val in enumerate("A B C D E F G H I J K L M N O P Q R S T U V W X Y Z".split())}
