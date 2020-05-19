@@ -5,6 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
+import time
 
 # 네이버아이디, 성함, 별명, 전화번호마지막자리, 법인
 CafeUser = namedtuple('CafeUser', 'id nick age gender date reply')
@@ -72,7 +73,6 @@ class NCafeAutoJoin:
         club_id = url[url.index(code)+len(code):].split("&")[0]
         return club_id
 
-    # CafeUserCheckBox
     def find_wait_users(self):
         """
         유저정보 & 체크박스 컨트롤 가능한 객체 리턴
@@ -111,22 +111,25 @@ class NCafeAutoJoin:
                                      "#{}Answer>td > div > div > ol > li > p".format(nickname_id[1]), True).text
             yield CafeUser(id=nickname_id[1], nick=nickname_id[0], age=age, gender=gender, date=date, reply=reply)
 
-    def __del__(self):
-        self.close()
-
     def save(self):
-        if self.count() <= 0:
-            raise Exception("EMPTY Checked DATA")
-        action = self._parent.get_element(By.CSS_SELECTOR, "div.action_in")
+        if self.count(True) <= 0:
+            return False
+        action = self.get_element(By.CSS_SELECTOR, "div.action_in")
         for btn in action.find_elements_by_css_selector("a.btn_type"):
             if btn.text.strip() == "가입승인":
-                if len(self._users) > 0:
-                    btn.click()
+                btn.click()
+                time.sleep(1)
+                alert = self._driver.switch_to.alert
+                alert.accept()
+                time.sleep(1)
+                return True
         raise Exception("가입승인 실패")
 
     def close(self):
         if self._driver:
+            self._driver.implicitly_wait(1)
             self._driver.close()
+            self._driver = None
 
 
 class CafeUserCheckBox:

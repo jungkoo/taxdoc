@@ -61,6 +61,31 @@ class GoogleFormSheet:
                 yield seq, self._sheet.row_values(seq)
             seq += 1
 
+    def find_keyword_all(self, *keywords):
+        return [v for k, v in self.find_keyword_all_with_seq(*keywords)]
+
+    def find_keyword_all_with_seq(self, *keywords):
+        seed_set = None
+        for keyword in keywords:
+            cell_set = set()
+            cell_set.update([x.row for x in self._sheet.findall(keyword)])
+            if seed_set is None:
+                seed_set = cell_set
+                continue
+            seed_set = seed_set & cell_set
+        return [(seq, self._sheet.row_values(seq)) for seq in seed_set or []]
+
+    def update_value(self, row_seq, column_seq, value):
+        return self._sheet.update_cell(row_seq, column_seq, value)
+
+    @staticmethod  # 26진수, A -> 1 , AA -> 26
+    def column_code_to_index(column_str):
+        m = {val: idx+1 for idx, val in enumerate("A B C D E F G H I J K L M N O P Q R S T U V W X Y Z".split())}
+        seq = 0
+        for idx, val in enumerate(column_str.upper()[::-1]):
+            seq += m[val] * 26 ** idx
+        return seq - 1
+
 
 def str_to_date(sdt):
     return datetime.strptime(sdt, "%Y-%m-%d %H:%M:%S")
@@ -120,7 +145,3 @@ class HistoryFormSheet:
         else:
             self._db.insert({'url': self._sheet.url, 'sheet_name': self._sheet.sheet_name,
                              'date': date_to_str(self._date), 'next_seq': self._next_seq})
-
-
-
-
