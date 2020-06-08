@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from taxdoc.naver_cafe import NCafeLogin, NCafeAutoJoin, CafeUser
+from taxdoc.naver_cafe import NCafeAutoJoin, CafeUser, NCafeLogin
 from taxdoc.sheet import GoogleFormSheet
+from taxdoc.the_bill_api import bot_send
 import re
+# 해당키 :  naver-union-bot@stellar-toolbox-263006.iam.gserviceaccount.com
 
-USER_ID = "<관리자아이디>"
-PASS_WORD = "<관리자패스워드>"
+USER_ID = "<아이디>"
+PASS_WORD = "<암호>"
 DRIVER_PATH = "chromedriver"
-GOOGLE_SHEET_URL = "https://docs...01"
+GOOGLE_SHEET_URL = "https://do....8022350"
 CAFE_IDX = GoogleFormSheet.column_code_to_index("Q")
 CMS_IDX = GoogleFormSheet.column_code_to_index("M")
-
+SHEET = GoogleFormSheet(url=GOOGLE_SHEET_URL, sheet_name="설문지 응답(CMS포함)")
+HOOK_URL = "https://hook.dooray.com...USTjFTcjP6UDg"
 
 class CafeUserConform:
     def __init__(self, google_sheet: GoogleFormSheet, cafeAutoJoin: NCafeAutoJoin):
@@ -53,7 +56,16 @@ class CafeUserConform:
         return visible_text
 
 
-if __name__ == "__main__":
+def run(fun, bot_name, _is_send_message=False):
+    print(":: bot-name ==> " + bot_name)
+    _bot_hook_url = HOOK_URL
+    _msg = fun()
+    if len(_msg) > 0 and _is_send_message:
+        bot_send(bot_name, text=_msg, bot_hook_url=_bot_hook_url)
+    print(_msg)
+
+
+def cafe_user_conform_msg():
     success_msg = "### 자동처리 대상\n"
     fail_msg = "### 수동처리 대상\n"
     error_msg = "### 에러메시지\n"
@@ -87,4 +99,8 @@ if __name__ == "__main__":
         msg += fail_msg
     if error_cnt > 0:
         msg += error_msg
-    print(msg)
+    return msg
+
+
+if __name__ == "__main__":
+    run(cafe_user_conform_msg, "까페가입자봇", False)
