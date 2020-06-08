@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from collections import namedtuple
+from collections import namedtuple, Set
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -28,6 +28,7 @@ class NCafeLogin:
         self._username = None
         self._user_password = None
         self._driver_path = driver_path
+        self._windows_handle = {}
 
     def login(self, user_name, user_password):
         """
@@ -56,14 +57,26 @@ class NCafeLogin:
         club_id = url[url.index(code)+len(code):].split("&")[0]
         return club_id
 
-    def get(self, url):
-        self._driver.get(url)
-
     def get_driver(self):
         return self._driver
 
     def get_club_id(self):
         return self._club_id
+
+    def current_url(self, url):
+        """
+        로그인세션을 유지한채 url 을 새탭에 하나씩 띄워서 조작할 수 있도록 한다.
+        단, thread safe 하지 않으므로 주의하자.
+        """
+        if url not in self._windows_handle:
+            self.get_driver().execute_script("window.open()")
+            tab_id = self.get_driver().window_handles[-1]
+            self.get_driver().switch_to.window(tab_id)
+            self.get_driver().get(url)
+            WebDriverWait(self.get_driver(), 10).until(EC.element_to_be_clickable((By.TAG_NAME, "BODY")))
+            self._windows_handle[url] = tab_id
+        else:
+            self.get_driver().switch_to.window(self._windows_handle[url])
 
     def get_element(self, by, value, wait=False):
         """
@@ -93,104 +106,107 @@ class NCafeLogin:
             self._driver.implicitly_wait(1)
             self._driver.close()
             self._driver = None
+        return self._driver
 
 
 class NCafeAutoJoin:
-    def __init__(self, user_name, user_password, driver_path, cafe_url="https://cafe.naver.com/nunion", ):
-        self._accept = NCafeLogin(driver_path=driver_path, cafe_url=cafe_url)\
-            .login(user_name=user_name, user_password=user_password)
-        self._join = NCafeLogin(driver_path=driver_path, cafe_url=cafe_url)\
-            .login(user_name=user_name, user_password=user_password)
+    def __init__(self, nCafeLogin: NCafeLogin):
+        self._cafe = nCafeLogin
+        self._change_level_user()
+        self._change_wait_user()
+        time.sleep(2)
 
-    def find_wait_users(self):
+    def _change_wait_user(self):
+        url = "https://cafe.naver.com/ManageJoinApplication.nhn?search.clubid={}".format(self._cafe.get_club_id())
+        self._cafe.current_url(url)
+        return self._cafe
+
+    def _change_level_user(self):
+        url = "https://cafe.naver.com/ManageWholeMember.nhn?clubid={}".format(self._cafe.get_club_id())
+        self._cafe.current_url(url)
+        return self._cafe
+
+    def get_wait_users(self):
         """
-        유저정보 & 체크박스 컨트롤 가능한 객체 리턴
+        가입대기중인 명단을 보여준다
         """
-        def _extract_wait_users():
-            """
-                가입승인대기유저 목록 로딩한다
-            """
-            accept = self._accept
-            accept.get("https://cafe.naver.com/ManageJoinApplication.nhn?search.clubid={}".format(accept.get_club_id()))
-            table_body = accept.get_element(By.ID, "applymemberList", True)
-            for row in table_body.find_elements_by_css_selector("tr"):
-                if not ((row.get_attribute("id") or "").startswith("member")):
-                    continue
-                nickname_id = row.find_element_by_css_selector("td:nth-child(2) > div > a").text.strip() \
-                    .replace("(", "").replace(")", "").split()
-                age = row.find_element_by_css_selector("td:nth-child(3)").text.strip()
-                gender = row.find_element_by_css_selector("td:nth-child(4)").text.strip()
-                date = row.find_element_by_css_selector("td:nth-child(5)").text.strip()
-                # reply load
-                row.find_element_by_css_selector("td:nth-child(6) > a").click()
-                reply = accept.get_element(By.CSS_SELECTOR,
-                                           "#{}Answer>td > div > div > ol > li > p".format(nickname_id[1]), True).text
-                yield CafeUser(id=nickname_id[1], nick=nickname_id[0], age=age, gender=gender, date=date, reply=reply)
-        for user in _extract_wait_users():
-            yield CafeUserCheckBox(user, self._accept, self._join)
+        accept = self._change_wait_user()
+        table_body = accept.get_element(By.ID, "applymemberList", True)
+        for row in table_body.find_elements_by_css_selector("tr"):
+            if not ((row.get_attribute("id") or "").startswith("member")):
+                continue
+            nickname_id = row.find_element_by_css_selector("td:nth-child(2) > div > a").text.strip() \
+                .replace("(", "").replace(")", "").split()
+            age = row.find_element_by_css_selector("td:nth-child(3)").text.strip()
+            gender = row.find_element_by_css_selector("td:nth-child(4)").text.strip()
+            date = row.find_element_by_css_selector("td:nth-child(5)").text.strip()
+            # reply load
+            row.find_element_by_css_selector("td:nth-child(6) > a").click()
+            reply = accept.get_element(By.CSS_SELECTOR,
+                                       "#{}Answer>td > div > div > ol > li > p".format(nickname_id[1]), True).text
+            yield CafeUser(id=nickname_id[1], nick=nickname_id[0], age=age, gender=gender, date=date, reply=reply)
 
-    def close(self):
-        self._accept.close()
-        self._join.close()
-
-
-class CafeUserCheckBox:
-    """
-    가입승인을 해준다
-    """
-    def __init__(self, init_user: CafeUser, accept: NCafeLogin, level_up: NCafeLogin):
-        self._cafe_accept = accept
-        self._level_up = level_up
-        self._value = init_user
-        self._id = init_user.id
-        el = self._cafe_accept.get_element(By.CSS_SELECTOR, "input[name='applyMemberCheck'][value='{}']".format(self._id))
-        self._checked = el.is_selected()
-        self.element = el
-
-    def set(self, value: CafeUser):
-        self._value = value
-
-    def get(self):
-        return self._value
-
-    def is_checked(self):
-        return self._checked
-
-    def checked(self):
-        if not self.is_checked():
-            self.element.click()
-            self._save_for_accept()
-            self._checked = True
-
-    def level(self, visible_text):
-        level_up = self._level_up
-        seed_url = "https://cafe.naver.com/ManageLevelUp.nhn?m=view&fromUpService=member" \
-                   "&model.clubid={cludid}&model.memberid={id}"
-        level_up.get(seed_url.format(**dict(cludid=level_up.get_club_id(), memberid=self._id)))
-        level_up_select_box = Select(self._driver.find_element_by_id('memberLevelSelect'))
-        level_up_select_box.select_by_visible_text(visible_text)
-        level_up.get_element(By.ID, "comment").send_keys("{} 확인완료".format(visible_text))
-        for btn in self._driver.find_elements_by_css_selector("#pop_footer>a"):
-            if btn.text.strip == "확인":
-                btn.click()
-                time.sleep(1)
-                return True
-        return False
-
-    def _save_for_accept(self):
+    def get_guest_users(self, filter_level="손님"):
         """
-        승인신청
+        손님 등급 명단을 조회해준다
         """
-        action = self._cafe_accept.get_element(By.CSS_SELECTOR, "div.action_in")
+        level_up = self._change_level_user()
+        table_body = level_up.get_element(By.CSS_SELECTOR, "#_tableContent > table > tbody", True)
+        for row in table_body.find_elements_by_css_selector("tr"):
+            column = row.find_elements_by_css_selector("td")
+            if column[3].text != filter_level:
+                continue
+            _nick_id = column[1].text.split()
+            _id = _nick_id[1][1:len(_nick_id[1])-1]
+            _nick = _nick_id[0]
+            _age = "-"
+            _gender = column[9].text
+            _date = column[4].text.strip()
+            _replay = "-"
+            yield CafeUser(id=_id, nick=_nick, age=_age, gender=_gender, date=_date, reply=_replay)
+
+    def _conform_wait_users(self, user_id_list=[]):
+        _cafe = self._change_wait_user()
+        if len(user_id_list) <= 0:
+            raise RuntimeError("wait user is empty list.")
+        for user_id in user_id_list:
+            if not isinstance(user_id, str):
+                raise RuntimeError("user_id is not string")
+            el = _cafe.get_element(By.CSS_SELECTOR, "input[name='applyMemberCheck'][value='{}']".format(user_id), True)
+            if not el:
+                raise RuntimeError("Wait Users Element Find ERROR !!!")
+
+            if not el.is_selected():
+                el.click()
+        action = _cafe.get_element(By.CSS_SELECTOR, "div.action_in")
         for btn in action.find_elements_by_css_selector("a.btn_type"):
             if btn.text.strip() == "가입승인":
                 btn.click()
-                time.sleep(1)
-                alert = self._cafe_accept.get_driver().switch_to.alert
-                alert.accept()
-                time.sleep(1)
-                return True
-        raise Exception("가입승인 실패 : ".format(self._value))
+                try:
+                    WebDriverWait(self._cafe.get_driver(), 5).until(EC.alert_is_present(), "선택한 신청자의 멤버가입을 승인하시겠습니까?")
+                    self._cafe.get_driver().switch_to.alert.accept()
+                    WebDriverWait(self._cafe.get_driver(), 5).until(EC.alert_is_present(), "가입처리가 완료되었습니다")
+                    self._cafe.get_driver().switch_to.alert.accept()
+                except TimeoutError:
+                    raise RuntimeError("alert timeout error")
+                return self
+        raise Exception("wait user conform error !!!")
 
-    def __str__(self):
-        return"[{}] {}".format("O" if self.is_checked() else "X", self._value)
+    def _conform_level_users(self, user_id_list=[], visible_text="일반 조합원"):
+        for user_id in user_id_list:
+            seed_url = "https://cafe.naver.com/ManageLevelUp.nhn?m=view&fromUpService=member" \
+                       "&model.clubid={cludid}&model.memberid={id}"
+            self._cafe.current_url(seed_url.format(**dict(cludid=self._cafe.get_club_id(), id=user_id)))
+            level_up_select_box = Select(self._cafe.get_element(By.ID, "memberLevelSelect", True))
+            level_up_select_box.select_by_visible_text(visible_text)
+            self._cafe.get_element(By.ID, "comment").send_keys("{} 확인완료".format(visible_text))
+            for btn in self._cafe.get_driver().find_elements_by_css_selector("#pop_footer>a"):
+                if btn.text.strip() == "확인":
+                    btn.click()
+                    WebDriverWait(self._cafe.get_driver(), 5).until(EC.alert_is_present(), "등업신청")
+                    alert = self._cafe.get_driver().switch_to.alert
+                    alert.accept()
+                    break
+
+    def close(self):
+        self._cafe.close()
