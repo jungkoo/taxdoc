@@ -6,7 +6,11 @@ import os
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+import logging
+import requests
+import threading
 
+_thread_local = threading.local()
 _document_style = None
 _config_path = None
 _document_config = None
@@ -58,40 +62,57 @@ def document_config():
     return _document_config
 
 
+class LoginSession:
+    """
+    request 를 이용한 데이터 조회
+    """
+    def __init__(self, user_id, password):
+        self._user_id = user_id
+        self._password = password
+        self._login_session = requests.session()
+        self._header = {'User-Agent': 'Mozilla/5.0', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'}
+        self._authentication()
+        self._limit = 100000
+        _thread_local.login_req = self
 
+    def _authentication(self):
+        data = {'layoutCd': 'spa00', 'loginid': self._user_id, 'loginpw': self._password}
+        self._login_session.get("https://www.thebill.co.kr", headers=self._header)
+        r = self._login_session.post("https://www.thebill.co.kr/webuser/loginProc.json", headers=self._header, data=data)
+        if r.json()['resultMsg'] != "":
+            raise Exception("LOGIN ERROR")
 
-#
-#
-#
-#
-# UnionMember = collections.namedtuple("UnionMember", 'doc_id user_name phone_number user_id password user_email pay_date pay_sum')
-#
-#
-# # 문서번호	이름	전화번호	주민번호	패스워드 이메일주소	납입기간	납입금액
-# def union_member_generator(file_path, first_line_skip=False):
-#     fd = open(file_path, "r")
-#     if first_line_skip:
-#         fd.readline()
-#     while True:
-#         line = fd.readline()
-#         if not line:
-#             break
-#         t = line.split("\t")
-#         yield UnionMember(doc_id=t[0], user_name=t[1], phone_number=t[2], user_id=t[3], password=t[4],
-#                           user_email=t[6] if t[5] in ("O", "True", "YES") else "", pay_date=t[7],
-#                           pay_sum=t[8].strip())
-#     fd.close()
-#
-#
-# def format_pay_string(text):
-#     # 2019-11-25~2019-12-26 => 2019.11 ~ 2019.12
-#     token = str(text).replace(" ", "").replace("-", "").split("~")
-#     if len(token) != 2:
-#         raise Exception("not found start_date, end_date")
-#     return "{}.{} ~ {}.{}".format(token[0][0:4], token[0][4:6], token[1][0:4], token[1][4:6])
-#
-#
-# def format_pay_sum(num):
-#     number = str(num).replace(" ", "").replace(",", "")
-#     number = int(number)
-#     return "{:,}".format(number)
+    def post(self, url, **data):
+        return self._login_session.post(url, headers=self._header, data=data)
+
+    def result_list_generator(self, url, **data):
+        res = self.post(url, **data)
+        json_res = res.json()
+        page_cnt = json_res['PageVO']['pageCnt']
+        page_param = dict()
+        page_param.update(data)
+
+        count = 0
+        for page_num in range(1, int(page_cnt)+1):
+            page_param['pageno'] = page_num
+            if count >= self._limit:
+                break
+            res = self.post(url, **page_param)
+            json_res = res.json()
+            for row in json_res['resultList'] or []:
+                if count >= self._limit:
+                    break
+                count += 1
+                yield dict(filter(lambda elem: elem[1] is not None, row.items()))
+
+    def session(self):
+        return self._login_session
+
+    @staticmethod
+    def current():
+        try:
+            val = _thread_local.login_req
+        except AttributeError:
+            logging.debug("current login info not found")
+        else:
+            return val
