@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import collections
 import configparser
 import os
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -10,21 +11,30 @@ _document_style = None
 _config_path = None
 _document_config = None
 
+ResultRecord = collections.namedtuple("ResultRecord", 'doc_id user_name phone_number user_id password user_email pay_date pay_sum user_address')
+
 
 def config_path():
     global _config_path
     if _config_path:
         return _config_path
-    _config_path = os.environ.get('TAX_DOC_CONFIG', '.')
+    _config_path = os.environ["TAX_DOC_CONFIG"] if "TAX_DOC_CONFIG" in os.environ else ""
     return _config_path
+
+
+def sign_path():
+    return config_path() + "/sign.png"
+
+
+def font_path():
+    return config_path() + "/font.ttf"
 
 
 def document_style():
     global _document_style
     if _document_style:
         return _document_style
-    font_path = config_path() + "/font.ttf"
-    pdfmetrics.registerFont(TTFont("default_font", font_path))
+    pdfmetrics.registerFont(TTFont("default_font", font_path()))
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name="default", fontName="default_font", alignment=1))
     styles.add(ParagraphStyle(name="left", fontName="default_font", alignment=0, leftIndent=10))
@@ -41,8 +51,9 @@ def document_config():
     global _document_config
     if _document_config:
         return _document_config
+    path = os.path.abspath(config_path()) + "/config.ini"
     config = configparser.ConfigParser()
-    config.read(config_path() + "/config.ini")
+    config.read_file(open(path))
     _document_config = config
     return _document_config
 
@@ -84,7 +95,3 @@ def document_config():
 #     number = str(num).replace(" ", "").replace(",", "")
 #     number = int(number)
 #     return "{:,}".format(number)
-
-if __name__ == "__main__":
-    os.environ["TAX_DOC_CONFIG"] = "/Users/tost/IdeaProjects/taxdoc/conf"
-    print(document_style())

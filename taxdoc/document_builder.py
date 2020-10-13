@@ -1,76 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import configparser
 import os
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from taxdoc import document_config, document_style, sign_path, ResultRecord
 from reportlab.lib.pagesizes import A4, mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle, Image
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib import pdfencrypt
 from reportlab.lib import colors
-
-DEFAULT_PATH = os.path.dirname(os.path.realpath(__file__))
-FONT_PATH = None
-SIGN_PATH = DEFAULT_PATH + "/default_sign.png"
-USER_DATE = "2020 년 1월 2일"
-GROUP_DATE = "2020 년 1월 2일"
-styles = None
+from datetime import datetime
 
 
-def style_load():
-    global FONT_PATH, styles
-    if styles:
-        return
-    else:
-        print("[WARN] styles load !!!")
-    if FONT_PATH is None:
-        FONT_PATH = DEFAULT_PATH + "/default_font.ttf"
+class DocumentBuilder:
+    def __init__(self, config: configparser.ConfigParser):
+        self.corp_name = config["CORP"]["name"]
+        self.corp_code = config["CORP"]["code"]
+        self.corp_address = config["CORP"]["address"]
+        self.bill_title = config["BILL"]["name"]
+        self.price_type_name = config["BILL"]["name"]
+        self.price_type_code = config["BILL"]["code"]
+        self.price_type_contents = config["BILL"]["comment"]
+        self.user_contents = config["BILL"]["contents"]
+        self.group_contents = config["BILL"]["group_contents"]
+        self.group_name = config["BILL"]["group_name"]
+        self.doc_title = config["BILL"]["doc_title"]
 
-    pdfmetrics.registerFont(TTFont("default_font", FONT_PATH))
-    styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="default", fontName="default_font", alignment=1))
-    styles.add(ParagraphStyle(name="left", fontName="default_font", alignment=0, leftIndent=10))
-    styles.add(ParagraphStyle(name="right", fontName="default_font", alignment=2))
-    styles.add(ParagraphStyle(name="group_sign", fontName="default_font", fontSize=12, alignment=2, rightIndnt=20))
-    styles.add(ParagraphStyle(name="head_seq", fontName="default_font", fontSize=9, alignment=1))  # 일련번호
-    styles.add(ParagraphStyle(name="head_title", fontName="default_font", fontSize=20, alignment=1))  # 기부금영수증
-    styles.add(ParagraphStyle(name="sub_title", fontName="default_font", leftIndent=5))  # 기부금영수증
-
-
-class TaxPdfCreator:
-    def __init__(self, doc_id, user_name, user_id, price_date, price_all):
-        """
-        @doc_id : 문서번호
-        @user_name : 조합원 이름
-        @user_id : 조합원 주민번호
-        @price_date : 조합비 납입일자 범위
-        @price_all : 조합비 합계
-        """
-        style_load()
-        if not isinstance(price_all, int):
-            raise Exception("price_all is not integer")
-        self._elements = []
-        self.doc_id = doc_id
-        self.user_name = user_name
-        self.user_id = user_id
-        self.user_address = ""
-        self.corp_name = "전국화학섬유식품\n산업노동조합"
-        self.corp_id = "107-82-63961"
-        self.corp_address = "서울 동작구 장승배기로 98 장승빌딩 5층"
-        self.price_type_name = "종교단체 외\n지정기부금"
-        self.price_type_code = "40"
-        self.price_type_contents = "노동조합비"
-        self.price_date = price_date
-        self.price_all = price_all
-        self.user_contents = "<소득세법> 제34조, <조세특례제한법> 제73조, 제76조 및 제88조의4에 따른 기부금을 위와 같이 기부하였음을 증명하여 주시기 바랍니다."
-        self.user_date = USER_DATE
-        self.group_contents = "위와 같이 기부금(노동조합 조합비)를 기부 받았음을 증명합니다."
-        self.group_date = GROUP_DATE
-        self.group_name = "기부금 수령인 전국화학섬유식품산업노동조합"
-
-    # 일련번호 : {{seq}} | 기부금 영수증 |
-    @classmethod
-    def head(cls, doc_id):
+    @staticmethod
+    def _head(doc_id="", title="기부금 영수증"):
+        styles = document_style()
         text = Paragraph("일련번호", style=styles["head_seq"])
         seq = Paragraph(doc_id, style=styles["head_seq"])
         seq = Table([[text, seq]], colWidths=[18 * mm, 19 * mm], rowHeights=[11 * mm])
@@ -81,8 +37,8 @@ class TaxPdfCreator:
             ('LEFTPADDING', (0, 0), (-1, -1), 0),
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
         ]))
-        title = Paragraph("기부금 영수증", style=styles["head_title"])
-        head = Table([[seq, title, '']], colWidths=[45 * mm, 58 * mm, 45 * mm], rowHeights=[11 * mm])
+        title_paragraph = Paragraph(title, style=styles["head_title"])
+        head = Table([[seq, title_paragraph, '']], colWidths=[45 * mm, 58 * mm, 45 * mm], rowHeights=[11 * mm])
         head.setStyle(TableStyle([
             ('VALIGN', (0, 0), (2, 0), 'MIDDLE'),
             ('LEFTPADDING', (0, 0), (-1, -1), 5),
@@ -92,13 +48,14 @@ class TaxPdfCreator:
         ]))
         return head
 
-    @classmethod
-    def user_info(cls, user_name, user_id, user_address=""):
+    @staticmethod
+    def _user_info(user_name="홍길동", user_id="790102-1111111", user_address=""):
         """
         @user : 조합원 이름
         @user_id : 조합원 주민번호
         @user_address : 조합원 주소지
         """
+        styles = document_style()
         user = Table([
             [
                 Paragraph("성 명", style=styles["default"]),
@@ -121,13 +78,14 @@ class TaxPdfCreator:
         ]))
         return user
 
-    @classmethod
-    def group_info(cls, corp_name, corp_id, corp_address):
+    @staticmethod
+    def _group_info(corp_name="회사이름", corp_id="123-444-55", corp_address="서울시 행복구 사랑동 123-33"):
         """
         @corp_name : 단체명
         @corp_id : 고유번호
         @corp_address : 소재지
         """
+        styles = document_style()
         group = Table([
             [
                 Paragraph("단 체 명", style=styles["default"]),
@@ -150,8 +108,9 @@ class TaxPdfCreator:
         ]))
         return group
 
-    @classmethod
-    def price_info(cls, price_type_name, price_type_code, price_date, price_type_contents, price_all):
+    @staticmethod
+    def _price_info(price_type_name="종교단체 외\n지정기부금", price_type_code="40", price_date="시작날짜 ~ 종료날짜",
+                   price_type_contents="노동조합비", price_all="0"):
         """
         @price_type_contents : 유형
         @price_type_code : 코드
@@ -159,6 +118,7 @@ class TaxPdfCreator:
         @price_type_contents : 내용
         @price_all : 금액
         """
+        styles = document_style()
         price = Table([
             [
                 Paragraph("유 형", style=styles["default"]),
@@ -172,7 +132,8 @@ class TaxPdfCreator:
                 Paragraph(price_type_code, style=styles["default"]),
                 Paragraph(price_date, style=styles["default"]),
                 Paragraph(price_type_contents, style=styles["default"]),
-                Paragraph(format(price_all, ',d'), style=styles["default"]),
+                # Paragraph(format(price_all, ',d'), style=styles["default"]),
+                Paragraph(price_all, style=styles["default"]),
             ],
             [
                 '',
@@ -205,13 +166,14 @@ class TaxPdfCreator:
         ]))
         return price
 
-    @classmethod
-    def user_check_info(cls, user_contents, user_date, user_name):
+    @staticmethod
+    def _user_check_info(user_contents, user_date="날짜", user_name="이름"):
         """
         @contents : 사용자 체크 내용
         @date : 날짜
         @user_name : 조합원명
         """
+        styles = document_style()
         user_check = Table([
             [
                 Paragraph(user_contents, style=styles["left"]),
@@ -234,14 +196,15 @@ class TaxPdfCreator:
         ]))
         return user_check
 
-    @classmethod
-    def group_check_info(cls, group_contents, group_date, group_name):
+    @staticmethod
+    def _group_check_info(group_contents, group_date, group_name):
         """
         @group_contents : 조합용 내용
         @date : 날짜
         @group_name : 조합이름
         """
-        im = Image(SIGN_PATH, width=15 * mm, height=15 * mm)
+        styles = document_style()
+        im = Image(sign_path(), width=15 * mm, height=15 * mm)
         group_sign = Table([[Paragraph(group_name, style=styles["group_sign"]), im]], colWidths=[128 * mm, 20 * mm])
         group_sign.setStyle(TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -272,26 +235,32 @@ class TaxPdfCreator:
         ]))
         return group_check
 
-    def _create_elements(self):
-        if not self.doc_id or len(self.doc_id) <= 0:
-            raise Exception("empty 'doc_id")
-        if not self.user_name or len(self.user_name) <= 0:
-            raise Exception("empty 'user_name")
-        if not self.price_date or len(self.price_date) <= 0:
-            raise Exception("empty 'price_date")
-        if self.price_all <= 0:
-            raise Exception("price_all zero under value")
+    def __call__(self, result: ResultRecord):
+        def format_pay_sum(num):
+            number = str(num).replace(" ", "").replace(",", "")
+            number = int(number)
+            return "{:,}".format(number)
 
-        layout_data = [[TaxPdfCreator.head(self.doc_id)],
+        styles = document_style()
+        if not result.doc_id or len(result.doc_id) <= 0:
+            raise Exception("empty 'doc_id")
+        if not result.user_name or len(result.user_name) <= 0:
+            raise Exception("empty 'user_name")
+        if not result.pay_date or len(result.pay_date) <= 0:
+            raise Exception("empty 'price_date")
+        if len(result.pay_sum) <= 0:
+            raise Exception("price_all zero under value")
+        to_day = datetime.now().strftime("%Y-%m-%d")
+        layout_data = [[DocumentBuilder._head(result.doc_id)],
                        [Paragraph("1. 기부자", style=styles["sub_title"])],
-                       [TaxPdfCreator.user_info(self.user_name, self.user_id, self.user_address)],
+                       [DocumentBuilder._user_info(result.user_name, result.user_id, result.user_address)],
                        [Paragraph("2. 기부자 단체", style=styles["sub_title"])],
-                       [TaxPdfCreator.group_info(self.corp_name, self.corp_id, self.corp_address)],
+                       [DocumentBuilder._group_info(self.corp_name, self.corp_code, self.corp_address)],
                        [Paragraph("3. 기부내용", style=styles["sub_title"])],
-                       [TaxPdfCreator.price_info(self.price_type_name, self.price_type_code, self.price_date,
-                                                 self.price_type_contents, self.price_all)],
-                       [TaxPdfCreator.user_check_info(self.user_contents, self.user_date, self.user_name)],
-                       [TaxPdfCreator.group_check_info(self.group_contents, self.group_date, self.group_name)],
+                       [DocumentBuilder._price_info(self.price_type_name, self.price_type_code, result.pay_date,
+                                                 self.price_type_contents, result.pay_sum)],
+                       [DocumentBuilder._user_check_info(self.user_contents, to_day, result.user_name)],
+                       [DocumentBuilder._group_check_info(self.group_contents, to_day, self.group_name)],
                        ]
         layout = Table(layout_data,
                        colWidths=[148 * mm],
@@ -305,14 +274,28 @@ class TaxPdfCreator:
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
             ('TOPPADDING', (0, 0), (-1, -1), 0),
         ]))
-        self._elements.append(layout)
+        return layout
 
-    def save(self, filename, password=None, overwrite=False):
-        self._create_elements()
-        if self._elements is None or len(self._elements) == 0:
-            raise Exception("elements data is empty")
+    def save(self, result: ResultRecord, overwrite=True):
+        layout = self(result)
+        filename = result.doc_id + ".pdf"
         if os.path.exists(filename) and overwrite is False:
             raise Exception("file exist. not overwrite : ", filename)
-        enc = pdfencrypt.StandardEncryption(password, canPrint=0) if password else None
-        doc = SimpleDocTemplate(filename, pagesize=A4, encrypt=enc, title="노동조합비 소득공제 자료 (공동성명)")
-        doc.build(self._elements)
+        enc = pdfencrypt.StandardEncryption(result.password, canPrint=0) if result.password else None
+        doc = SimpleDocTemplate(filename, pagesize=A4, encrypt=enc, title=self.doc_title)
+        doc.build([layout, ])
+
+    @classmethod
+    def default_instance(cls):
+        config: configparser.ConfigParser = document_config()
+        obj = DocumentBuilder(config)
+        return obj
+
+
+if __name__ == "__main__":
+    os.environ["TAX_DOC_CONFIG"] = "/Users/tost/IdeaProjects/taxdoc/conf"
+    build = DocumentBuilder(document_config())
+    r = ResultRecord(doc_id="001", user_name="길동", phone_number="010-3333-6543", user_id="820723-1111111",
+                     user_address="", password=None, user_email="deajang@gmail.com", pay_date="2019.01 ~ 2019.12",
+                     pay_sum="30,000")
+    build.save(r)
