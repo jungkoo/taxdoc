@@ -40,8 +40,12 @@ def text_doc():
         return "시크릿 코드 잘못됨"
     print("name={}, number={}".format(name, number))
     member_id = _tax_api.get_member_id(name, number)
+    if not member_id:
+        return "해당 유저 정보 없음 (이름: {}, 전화번호: {} 확인요망)".format(name, number)
     print("member_id={}".format(member_id))
     r = _tax_api.get_pay_result(member_id)
+    if not r:
+        return "소득공제 데이터를 못찾았습니다. 확인부탁드립니다"
     print("r==> {}".format(r))
     doc_id = "{}-{}".format(_tax_api.year, sequence())
     doc_id_file = "{}.pdf".format(doc_id)
