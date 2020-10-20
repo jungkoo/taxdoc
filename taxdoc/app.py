@@ -24,10 +24,20 @@ def sequence():
 app = Flask(__name__)
 
 
+@app.route("/")
+def index():
+    return "2019연말정산<br/><form action='/taxdoc'>" \
+           "이름: <input name='name'/><br/>" \
+           "전화번호: <input name='number'/><br/>" \
+           "주민번호(인쇄시사용): <input name='jumin'/><br/>" \
+           "<button type='submit'>ok</button><form>"
+
+
 @app.route("/taxdoc")
 def text_doc():
     name = request.args.get('name', "조합")
     number = request.args.get('number', "0000")
+    jumin = request.args.get('jumin', "")
     print("name={}, number={}".format(name, number))
     member_id = _tax_api.get_member_id(name, number)
     print("member_id={}".format(member_id))
@@ -35,7 +45,7 @@ def text_doc():
     print("r==> {}".format(r))
     doc_id = "{}-{}".format(_tax_api.year, sequence())
     print("doc_id=> {}".format(doc_id))
-    result = ResultRecord(doc_id=doc_id, user_name=name, phone_number=number, user_id="",
+    result = ResultRecord(doc_id=doc_id, user_name=name, phone_number=number, user_id=jumin,
                           user_address="", password=None, user_email="", pay_date=r.get("date_range", "-"),
                           pay_sum=r.get("pay_sum", "0"))
     _document_builder.save(result=result)
@@ -47,5 +57,5 @@ if __name__ == '__main__':
     config = default_config()
     _tax_api = TaxApi(LoginSession(user_id=config["LOGIN"]["user"], password=config["LOGIN"]["password"]))
     _document_builder = DocumentBuilder(config)
-
-    app.run()
+    app.run(host='0.0.0.0', port='42000', debug=True)
+    # app.run()

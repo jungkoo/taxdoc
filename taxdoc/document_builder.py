@@ -12,17 +12,17 @@ from datetime import datetime
 
 class DocumentBuilder:
     def __init__(self, config: configparser.ConfigParser):
-        self.corp_name = config["CORP"]["name"]
-        self.corp_code = config["CORP"]["code"]
-        self.corp_address = config["CORP"]["address"]
-        self.bill_title = config["BILL"]["name"]
-        self.price_type_name = config["BILL"]["name"]
-        self.price_type_code = config["BILL"]["code"]
-        self.price_type_contents = config["BILL"]["comment"]
-        self.user_contents = config["BILL"]["contents"]
-        self.group_contents = config["BILL"]["group_contents"]
-        self.group_name = config["BILL"]["group_name"]
-        self.doc_title = config["BILL"]["doc_title"]
+        self.corp_name = config["CORP"]["name"].replace("\\n", "\n")
+        self.corp_code = config["CORP"]["code"].replace("\\n", "\n")
+        self.corp_address = config["CORP"]["address"].replace("\\n", "\n")
+        self.bill_title = config["BILL"]["name"].replace("\\n", "\n")
+        self.price_type_name = config["BILL"]["name"].replace("\\n", "\n")
+        self.price_type_code = config["BILL"]["code"].replace("\\n", "\n")
+        self.price_type_contents = config["BILL"]["comment"].replace("\\n", "\n")
+        self.user_contents = config["BILL"]["contents"].replace("\\n", "\n")
+        self.group_contents = config["BILL"]["group_contents"].replace("\\n", "\n")
+        self.group_name = config["BILL"]["group_name"].replace("\\n", "\n")
+        self.doc_title = config["BILL"]["doc_title"].replace("\\n", "\n")
 
     @staticmethod
     def _head(doc_id="", title="기부금 영수증"):
