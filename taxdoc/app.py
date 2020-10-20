@@ -23,10 +23,12 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     return "{} 연말정산<br/><form action='/taxdoc'>" \
+           "# 필수입력 -- <br/>" \
            "이름: <input name='name'/><br/>" \
            "전화번호: <input name='number'/><br/>" \
-           "주민번호(인쇄시사용): <input name='jumin'/><br/>" \
            "개인코드(문자로 추가제공해야할것): <input name='key' value='test'/><br/>" \
+           "# 선택사항(입력안해도 동작함) -- <br/>" \
+           "주민번호(인쇄할때 단순 출력하는용도 입력한그대로...): <input name='jumin'/><br/>" \
            "<button type='submit'>ok</button><form>".format(_tax_api.year)
 
 
@@ -61,7 +63,7 @@ def text_doc():
             print("delete => ", doc_id_file)
             os.remove(doc_id_file)
         else:
-            print("no file =>" , doc_id_file)
+            print("no file =>", doc_id_file)
         return response
     return send_from_directory(directory='', filename=doc_id_file)
 
@@ -69,7 +71,7 @@ def text_doc():
 if __name__ == '__main__':
     os.environ["TAX_DOC_CONFIG"] = "/Users/tost/IdeaProjects/taxdoc/conf"
     config = default_config()
-    _tax_api = TaxApi(LoginSession(user_id=config["LOGIN"]["user"], password=config["LOGIN"]["password"]))
+    _tax_api = TaxApi(LoginSession(user_id=config["LOGIN"]["user"], password=config["LOGIN"]["password"]), year=2020)
     _document_builder = DocumentBuilder(config)
     app.run(host='0.0.0.0', port='42000', debug=True)
     # app.run()
