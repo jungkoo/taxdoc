@@ -26,8 +26,8 @@ def index():
            "# 필수입력 -- <br/>" \
            "이름: <input name='name'/><br/>" \
            "전화번호: <input name='number'/><br/>" \
-           "개인코드(문자로 추가제공해야할것): <input name='key' value='test'/><br/>" \
-           "# 선택사항(입력안해도 동작함) -- <br/>" \
+           "<br/># 나중에 문자로 개인 코드를 넣어야할거 같음<br/>개인코드: <input name='key' value='test' readonly='true'/><br/>" \
+           "<br/><br/># 선택사항(입력안해도 동작함) -- <br/>" \
            "주민번호(인쇄할때 단순 출력하는용도 입력한그대로...): <input name='jumin'/><br/>" \
            "<button type='submit'>ok</button><form>".format(_tax_api.year)
 
