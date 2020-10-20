@@ -7,11 +7,11 @@ import datetime
 
 class TaxApi:
     def __init__(self, login_session: LoginSession, year=(datetime.datetime.now() - timedelta(days=365)).year):
-        self._session = login_session
-        self._year = year
+        self.session = login_session
+        self.year = year
 
     def get_member_id(self, name, phone_number):
-        s: LoginSession = self._session
+        s: LoginSession = self.session
         phone = phone_number.replace("-", "")
         rsb = s.result_list_generator("https://www.thebill.co.kr/cms2/cmsMemList.json", memberName=name)
         for r in rsb:
@@ -26,9 +26,9 @@ class TaxApi:
             if len(token) != 2:
                 raise Exception("not found start_date, end_date")
             return "{}.{} ~ {}.{}".format(token[0][0:4], token[0][4:6], token[1][0:4], token[1][4:6])
-        s: LoginSession = self._session
-        start_date = "{}-01-01".format(self._year)
-        end_date = "{}-12-31".format(self._year)
+        s: LoginSession = self.session
+        start_date = "{}-01-01".format(self.year)
+        end_date = "{}-12-31".format(self.year)
         pay_sum = 0
         max_date = "000000"
         min_date = "999999"

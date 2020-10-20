@@ -12,6 +12,14 @@ import hashlib
 
 _document_builder = None
 _tax_api = None
+_cache = dict(doc_id=1)
+
+
+def sequence():
+    seq = _cache["doc_id"]
+    _cache["doc_id"] = seq + 1
+    return "{:04d}".format(seq)
+
 
 app = Flask(__name__)
 
@@ -25,7 +33,7 @@ def text_doc():
     print("member_id={}".format(member_id))
     r = _tax_api.get_pay_result(member_id)
     print("r==> {}".format(r))
-    doc_id = hashlib.sha256("{}-{}".format(name, number).encode()).hexdigest()
+    doc_id = "{}-{}".format(_tax_api.year, sequence())
     print("doc_id=> {}".format(doc_id))
     result = ResultRecord(doc_id=doc_id, user_name=name, phone_number=number, user_id="",
                           user_address="", password=None, user_email="", pay_date=r.get("date_range", "-"),
