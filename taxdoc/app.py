@@ -3,12 +3,8 @@
 from taxdoc import LoginSession, default_config, ResultRecord
 import os
 from taxdoc.document_builder import DocumentBuilder
-from flask import Flask, request, send_from_directory
-from flask import send_file
-from flask import make_response
+from flask import Flask, request, send_from_directory, after_this_request
 from taxdoc.tax_api import TaxApi
-import io
-import hashlib
 
 _document_builder = None
 _tax_api = None
@@ -44,12 +40,22 @@ def text_doc():
     r = _tax_api.get_pay_result(member_id)
     print("r==> {}".format(r))
     doc_id = "{}-{}".format(_tax_api.year, sequence())
+    doc_id_file = "{}.pdf".format(doc_id)
     print("doc_id=> {}".format(doc_id))
     result = ResultRecord(doc_id=doc_id, user_name=name, phone_number=number, user_id=jumin,
                           user_address="", password=None, user_email="", pay_date=r.get("date_range", "-"),
                           pay_sum=r.get("pay_sum", "0"))
     _document_builder.save(result=result)
-    return send_from_directory(directory='', filename="{}.pdf".format(doc_id))
+
+    @after_this_request
+    def cleanup(response):
+        if os.path.isfile(doc_id_file):
+            print("delete => ", doc_id_file)
+            os.remove(doc_id_file)
+        else:
+            print("no file =>" , doc_id_file)
+        return response
+    return send_from_directory(directory='', filename=doc_id_file)
 
 
 if __name__ == '__main__':
