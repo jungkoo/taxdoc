@@ -26,7 +26,7 @@ def index():
            "이름: <input name='name'/><br/>" \
            "전화번호: <input name='number'/><br/>" \
            "주민번호(인쇄시사용): <input name='jumin'/><br/>" \
-           "다: <input name='key'>test</value><br/>" \
+           "다: <input name='key' value='test'/><br/>" \
            "<button type='submit'>ok</button><form>".format(_tax_api.year)
 
 
