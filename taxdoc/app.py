@@ -22,11 +22,12 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return "2019연말정산<br/><form action='/taxdoc'>" \
+    return "{} 연말정산<br/><form action='/taxdoc'>" \
            "이름: <input name='name'/><br/>" \
            "전화번호: <input name='number'/><br/>" \
            "주민번호(인쇄시사용): <input name='jumin'/><br/>" \
-           "<button type='submit'>ok</button><form>"
+           "다: <input name='key'>test</value><br/>" \
+           "<button type='submit'>ok</button><form>".format(_tax_api.year)
 
 
 @app.route("/taxdoc")
@@ -34,6 +35,9 @@ def text_doc():
     name = request.args.get('name', "조합")
     number = request.args.get('number', "0000")
     jumin = request.args.get('jumin', "")
+    key = request.args.get('key', "")
+    if key != "test":
+        return "시크릿 코드 잘못됨"
     print("name={}, number={}".format(name, number))
     member_id = _tax_api.get_member_id(name, number)
     print("member_id={}".format(member_id))
