@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import configparser
 import os
-from taxdoc import document_config, document_style, sign_path, ResultRecord
+from taxdoc import default_config, document_style, sign_path, ResultRecord
 from reportlab.lib.pagesizes import A4, mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle, Image
 from reportlab.lib import pdfencrypt
@@ -287,15 +287,13 @@ class DocumentBuilder:
 
     @classmethod
     def default_instance(cls):
-        config: configparser.ConfigParser = document_config()
+        config: configparser.ConfigParser = default_config()
         obj = DocumentBuilder(config)
         return obj
 
-
-if __name__ == "__main__":
-    os.environ["TAX_DOC_CONFIG"] = "/Users/tost/IdeaProjects/taxdoc/conf"
-    build = DocumentBuilder(document_config())
-    r = ResultRecord(doc_id="001", user_name="길동", phone_number="010-3333-6543", user_id="820723-1111111",
-                     user_address="", password=None, user_email="deajang@gmail.com", pay_date="2019.01 ~ 2019.12",
-                     pay_sum="30,000")
-    build.save(r)
+# if __name__ == "__main__":
+#     os.environ["TAX_DOC_CONFIG"] = "/Users/tost/IdeaProjects/taxdoc/conf"
+#     build = DocumentBuilder(document_config())
+#     r = ResultRecord(doc_id="001", user_name="길동", phone_number="010-3333-6543", user_id="820723-1111111",
+#                      user_address="", password=None, user_email="deajang@gmail.com", pay_date="2019.01 ~ 2019.12",
+#                      pay_sum="30,000")

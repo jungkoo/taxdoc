@@ -51,7 +51,7 @@ def document_style():
     return _document_style
 
 
-def document_config():
+def default_config():
     global _document_config
     if _document_config:
         return _document_config
@@ -80,7 +80,7 @@ class LoginSession:
         self._login_session.get("https://www.thebill.co.kr", headers=self._header)
         r = self._login_session.post("https://www.thebill.co.kr/webuser/loginProc.json", headers=self._header, data=data)
         if r.json()['resultMsg'] != "":
-            raise Exception("LOGIN ERROR")
+            raise Exception("LOGIN ERROR (loginid={})".format(self._user_id))
 
     def post(self, url, **data):
         return self._login_session.post(url, headers=self._header, data=data)
