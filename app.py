@@ -44,14 +44,12 @@ def login():
             user_phone = request.form['user_phone']
             member_id = _tax_api.get_member_id(user_name, user_phone)
             if member_id is not None:
-                doc_id = "{}-{}".format(_tax_api.year, sequence())
                 r = _tax_api.get_pay_result(member_id)
                 if not r:
                     return "소득공제 데이터가 존재하지 않습니다. 담당자에게 문의주세요"
                 else:
                     session['member_id'] = member_id
                     session['result'] = r
-                    session['doc_id'] = doc_id
                     session['user_name'] = user_name
                     session['user_phone'] = user_phone
                 return redirect(url_for('index'))
@@ -66,7 +64,7 @@ def download():
     if not session.get("member_id"):
         return "다운로드 받을수 없습니다"
     r = session.get("result")
-    doc_id = session.get("doc_id")
+    doc_id = doc_id = "{}-{}".format(_tax_api.year, sequence())
     user_name = session.get("user_name")
     user_phone = session.get("user_phone")
     user_id = request.form["user_uniq"] if request.method == 'POST' else ""
@@ -92,7 +90,7 @@ def index():
         return render_template("login.html")
     else:
         user_name = session.get("user_name")
-        return render_template("index.html", user_name=user_name)
+        return render_template("index.html", user_name=user_name, year=_tax_api.year)
 
 
 if __name__ == '__main__':
@@ -105,4 +103,4 @@ if __name__ == '__main__':
                       year=os.environ.get("TAX_DOC_YEAR"))
     _document_builder = DocumentBuilder(config)
     app.secret_key = os.environ.get("TAX_DOC_KEY") or "123"
-    app.run(host='0.0.0.0', port='10008')
+    app.run(host='0.0.0.0', port='10080')
