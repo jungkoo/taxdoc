@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from datetime import timedelta
+
 from taxdoc import LoginSession, default_config, ResultRecord
 import os
 from taxdoc.document_builder import DocumentBuilder
@@ -18,6 +20,12 @@ def sequence():
 
 
 app = Flask(__name__, static_url_path='')
+
+
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+    app.permanent_session_lifetime = timedelta(minutes=5)
 
 
 @app.route('/logout')
