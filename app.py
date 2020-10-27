@@ -24,6 +24,11 @@ def sequence():
 app = Flask(__name__, static_url_path='')
 
 
+def code_check(user_name, phone_number, code):
+    if code != app.secret_key:
+        raise ValueError("CODE 값 입력이 잘못되었습니다")
+
+
 @app.before_request
 def make_session_permanent():
     session.permanent = True
@@ -42,13 +47,15 @@ def login():
         return render_template('login.html')
     else:
         try:
+            code = request.form["code"]
             user_name = request.form['user_name']
             user_phone = request.form['user_phone']
+            code_check(user_name=user_name, phone_number=user_phone.replace("-", "").strip(), code=code)
             member_id = _tax_api.get_member_id(user_name, user_phone)
             if member_id is not None:
                 r = _tax_api.get_pay_result(member_id)
                 if not r:
-                    return "소득공제 데이터가 존재하지 않습니다. 담당자에게 문의주세요"
+                    return render_template('error.html', msg="소득공제 데이터가 존재하지 않습니다.")
                 else:
                     session['member_id'] = member_id
                     session['result'] = r
@@ -56,9 +63,9 @@ def login():
                     session['user_phone'] = user_phone
                 return redirect(url_for('index'))
             else:
-                return "납부 이력을 찾을수 없습니다"
-        except:
-            return "에러가 발생했습니다"
+                return render_template('error.html', msg="납부이력을 찾을 수 없습니다")
+        except ValueError as e:
+            return render_template('error.html', msg=str(e))
 
 
 @app.route("/download", methods=["POST"])

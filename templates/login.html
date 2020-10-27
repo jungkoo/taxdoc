@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
-    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="author" content="공동성명">
     <meta name="generator" content="Jekyll v4.1.1">
-    <title>Signin Template · Bootstrap</title>
+    <title>조합비 연말정산 서류발급 (로그인)</title>
     <link rel="canonical" href="https://getbootstrap.com/docs/4.5/examples/sign-in/">
     <!-- Bootstrap core CSS -->
     <link href="{{url_for('static', filename = 'css/bootstrap.min.css')}}" rel="stylesheet">
@@ -33,12 +33,12 @@
   <body class="text-center">
 <form class="form-signin" method="post" action="/login">
   <h1 class="h3 mb-3 font-weight-normal">연말정산 정보입력</h1>
-  <label for="inputEmail" class="sr-only">이름</label>
+  <label class="sr-only">이름</label>
   <input type="text" id="inputName" name="user_name" class="form-control" placeholder="이름 (예: 홍길동)" required autofocus>
-  <label for="inputEmail" class="sr-only">전화번호</label>
+  <label class="sr-only">전화번호</label>
   <input type="text" id="inputPhoneNumber" name="user_phone" class="form-control" placeholder="전화번호 (예: 010-1234-5678)" required autofocus>
-<!--  <label for="inputPassword" class="sr-only">코드번호</label>-->
-<!--  <input type="code" id="inputPassword" class="form-control" placeholder="코드번호" required>-->
+  <label for="inputPassword" class="sr-only">코드번호</label>
+  <input type="password" name="code" class="form-control" placeholder="코드번호 (개인별 코드)" required>
   <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
   <p class="mt-5 mb-3 text-muted">&copy; 2017-2020</p>
 </form>
