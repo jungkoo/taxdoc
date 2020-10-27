@@ -276,9 +276,9 @@ class DocumentBuilder:
         ]))
         return layout
 
-    def save(self, result: ResultRecord, overwrite=True):
+    def save(self, result: ResultRecord, file_name="", overwrite=True):
         layout = self(result)
-        filename = result.doc_id + ".pdf"
+        filename = file_name if file_name else result.doc_id + ".pdf"
         if os.path.exists(filename) and overwrite is False:
             raise Exception("file exist. not overwrite : ", filename)
         enc = pdfencrypt.StandardEncryption(result.password, canPrint=0) if result.password else None
