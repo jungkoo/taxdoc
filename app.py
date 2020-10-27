@@ -88,9 +88,9 @@ def index():
 
 
 if __name__ == '__main__':
-    os.environ["TAX_DOC_CONFIG"] = "/Users/tost/IdeaProjects/taxdoc/conf"
-    os.environ["TAX_DOC_YEAR"] = "2020"
-    os.environ["TAX_DOC_KEY"] = "123"
+    # os.environ["TAX_DOC_CONFIG"] = "/Users/tost/IdeaProjects/taxdoc/conf"
+    # os.environ["TAX_DOC_YEAR"] = "2020"
+    # os.environ["TAX_DOC_KEY"] = "123"
     config = default_config()
     _tax_api = TaxApi(LoginSession(user_id=config["LOGIN"]["user"],
                                    password=config["LOGIN"]["password"]),
