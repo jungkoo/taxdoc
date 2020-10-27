@@ -17,7 +17,6 @@ def sequence():
     global counter
     counter += 1
     doc_id = "{:04d}".format(counter)
-    print("doc_id => ", doc_id)
     return doc_id
 
 
@@ -73,7 +72,7 @@ def download():
     if not session.get("member_id"):
         return "다운로드 받을수 없습니다"
     r = session.get("result")
-    doc_id = doc_id = "{}-{}".format(_tax_api.year, sequence())
+    doc_id = "{}-{}".format(_tax_api.year, sequence())
     user_name = session.get("user_name")
     user_phone = session.get("user_phone")
     user_id = request.form["user_uniq"] if request.method == 'POST' else ""
@@ -84,6 +83,7 @@ def download():
                           pay_sum=r.get("pay_sum", "0"))
     doc_id_file = "{}.pdf".format(result.doc_id)
     _document_builder.save(result=result, file_name=file_name)
+    print("[{}] name:{}, phone:{} ==> {}  ", doc_id, user_name, user_phone, result)
 
     @after_this_request
     def cleanup(response):
@@ -103,9 +103,9 @@ def index():
 
 
 if __name__ == '__main__':
-    # os.environ["TAX_DOC_CONFIG"] = "/Users/tost/IdeaProjects/taxdoc/conf"
-    # os.environ["TAX_DOC_YEAR"] = "2020"
-    # os.environ["TAX_DOC_KEY"] = "123"
+    os.environ["TAX_DOC_CONFIG"] = "/Users/tost/IdeaProjects/taxdoc/conf"
+    os.environ["TAX_DOC_YEAR"] = "2020"
+    os.environ["TAX_DOC_KEY"] = "123"
     config = default_config()
     _tax_api = TaxApi(LoginSession(user_id=config["LOGIN"]["user"],
                                    password=config["LOGIN"]["password"]),
