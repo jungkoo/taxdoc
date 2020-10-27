@@ -16,7 +16,9 @@ counter = 1
 def sequence():
     global counter
     counter += 1
-    return "{:04d}".format(counter)
+    doc_id = "{:04d}".format(counter)
+    print("doc_id => ", doc_id)
+    return doc_id
 
 
 app = Flask(__name__, static_url_path='')
