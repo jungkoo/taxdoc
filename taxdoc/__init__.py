@@ -86,11 +86,19 @@ class LoginSession:
         retries = 3
         while retries:
             try:
-                return self._login_session.post(url, headers=self._header, data=data)
-            except requests.ConnectionException as e:
+                res = self._login_session.post(url, headers=self._header, data=data)
+                print("res {}".format(res))
+                json_res = res.json()
+                print("json_res {}".format(json_res))
+                page_cnt = json_res['PageVO']['pageCnt']
+                print("page_cnt {}".format(page_cnt))
+                return res
+            except BaseException as e:
                 last_connection_exception = e
                 retries -= 1
+                self._login_session = requests.session()
                 self._authentication()
+                print("세션 종료 재접속 시도 {} - {}/3".format(e, 3-retries))
         raise last_connection_exception
 
     def result_list_generator(self, url, **data):
