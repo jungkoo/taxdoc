@@ -87,11 +87,7 @@ class LoginSession:
         while retries:
             try:
                 res = self._login_session.post(url, headers=self._header, data=data)
-                print("res {}".format(res))
-                json_res = res.json()
-                print("json_res {}".format(json_res))
-                page_cnt = json_res['PageVO']['pageCnt']
-                print("page_cnt {}".format(page_cnt))
+                res.json()
                 return res
             except BaseException as e:
                 last_connection_exception = e
