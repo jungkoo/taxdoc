@@ -100,7 +100,7 @@ def download():
 @app.route("/", methods=['GET', 'POST'])
 def index():
     if not session.get("member_id"):
-        return render_template("login.html")
+        return render_template("login.html", year=_tax_api.year)
     else:
         user_name = session.get("user_name")
         detail = session.get('detail')
