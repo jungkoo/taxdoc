@@ -6,6 +6,9 @@ import os
 from taxdoc.document_builder import DocumentBuilder
 from flask import Flask, request, send_from_directory, after_this_request, render_template, session, redirect, url_for
 from taxdoc.tax_api import TaxApi
+# from tornado.wsgi import WSGIContainer
+# from tornado.httpserver import HTTPServer
+# from tornado.ioloop import IOLoop
 
 _document_builder = None
 _tax_api = None
@@ -52,7 +55,7 @@ def login():
             member_id = _tax_api.get_member_id(user_name, user_phone)
             if member_id is not None:
                 r = _tax_api.get_pay_result(member_id)
-                rd = _tax_api.get_pay_default_list(member_id)
+                rd = _tax_api.get_pay_detail_list(member_id)
                 if not r:
                     return render_template('error.html', msg="소득공제 데이터가 존재하지 않습니다.")
                 else:
@@ -113,5 +116,9 @@ if __name__ == '__main__':
                                    password=config["LOGIN"]["password"]),
                       year=os.environ.get("TAX_DOC_YEAR"))
     _document_builder = DocumentBuilder(config)
-    app.secret_key = os.environ.get("TAX_DOC_KEY") or "123"
+    app.secret_key = os.environ.get("TAX_DOC_KEY")
     app.run(host='0.0.0.0', port='10080', debug=True)
+
+    # http_server = HTTPServer(WSGIContainer(app))
+    # http_server.listen(10080)
+    # IOLoop.instance().start()

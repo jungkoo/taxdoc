@@ -50,7 +50,7 @@ class TaxApi:
 
         return dict(name=member_name, pay_sum=format(pay_sum, ',d'), date_range=date_range)
 
-    def get_pay_default_list(self, member_id):
+    def get_pay_detail_list(self, member_id):
         """
         납부 상세 내역리턴
         :param member_id: 더빌에서 사용하는 멤버 아이디
