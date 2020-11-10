@@ -9,6 +9,7 @@ from taxdoc.tax_api import TaxApi
 # from tornado.wsgi import WSGIContainer
 # from tornado.httpserver import HTTPServer
 # from tornado.ioloop import IOLoop
+from taxdoc.user_key import normalized_phone_number, user_key
 
 _document_builder = None
 _tax_api = None
@@ -26,7 +27,8 @@ app = Flask(__name__, static_url_path='')
 
 
 def code_check(user_name, phone_number, code):
-    if code != app.secret_key:
+    uk = user_key(user_name, phone_number, app.secret_key)
+    if code != app.secret_key and code != uk:
         raise ValueError("CODE 값 입력이 잘못되었습니다")
 
 
@@ -45,13 +47,13 @@ def logout():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
-        return render_template('login.html')
+        return render_template('login.html', code=code)
     else:
         try:
             code = request.form["code"]
             user_name = request.form['user_name']
             user_phone = request.form['user_phone']
-            code_check(user_name=user_name, phone_number=user_phone.replace("-", "").strip(), code=code)
+            code_check(user_name=user_name, phone_number=user_phone, code=code)
             member_id = _tax_api.get_member_id(user_name, user_phone)
             if member_id is not None:
                 r = _tax_api.get_pay_result(member_id)
@@ -82,9 +84,9 @@ def download():
     user_id = request.form["user_uniq"] if request.method == 'POST' else ""
     user_address = request.form["user_address"] if request.method == 'POST' else ""
     file_name = "{}/{}.pdf".format(os.path.dirname((os.path.abspath(__file__))), doc_id)
-    result = ResultRecord(doc_id=doc_id, user_name=user_name, phone_number=user_phone, user_id=user_id,
-                          user_address=user_address, password=None, user_email="", pay_date=r.get("date_range", "-"),
-                          pay_sum=r.get("pay_sum", "0"))
+    result = ResultRecord(doc_id=doc_id, user_name=user_name, phone_number=normalized_phone_number(user_phone),
+                          user_id=user_id, user_address=user_address, password=None, user_email="",
+                          pay_date=r.get("date_range", "-"), pay_sum=r.get("pay_sum", "0"))
     doc_id_file = "{}.pdf".format(result.doc_id)
     _document_builder.save(result=result, file_name=file_name)
     print("[{}] name:{}, phone:{} ==> {}  ", doc_id, user_name, user_phone, result)
@@ -100,7 +102,8 @@ def download():
 @app.route("/", methods=['GET', 'POST'])
 def index():
     if not session.get("member_id"):
-        return render_template("login.html", year=_tax_api.year)
+        code = request.args.get("code", "")
+        return render_template("login.html", year=_tax_api.year, code=code)
     else:
         user_name = session.get("user_name")
         detail = session.get('detail')
