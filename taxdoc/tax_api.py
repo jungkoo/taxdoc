@@ -20,6 +20,11 @@ class TaxApi:
         return None
 
     def get_pay_result(self, member_id):
+        """
+        연말정산용 결과 리턴
+        :param member_id: 더빌에서 사용하는 멤버 아이디
+        :return: {name: 이름, pay_sum: 총납입금액, date_range: 납입범위워}
+        """
         def format_pay_string(text):
             # 2019-11-25~2019-12-26 => 2019.11 ~ 2019.12
             token = str(text).replace(" ", "").replace("-", "").split("~")
@@ -44,3 +49,23 @@ class TaxApi:
             date_range = format_pay_string("{} ~ {}".format(min_date, max_date))
 
         return dict(name=member_name, pay_sum=format(pay_sum, ',d'), date_range=date_range)
+
+    def get_pay_default_list(self, member_id):
+        """
+        납부 상세 내역리턴
+        :param member_id: 더빌에서 사용하는 멤버 아이디
+        :return:
+        """
+        s: LoginSession = self.session
+        start_date = "{}-01-01".format(self.year)
+        end_date = "{}-12-31".format(self.year)
+        url = "https://www.thebill.co.kr/cms2/cmsInvList.json"
+        rsb = s.result_list_generator(url, startDate=start_date,
+                                      endDate=end_date, memberId=member_id, setListPerPage="30")
+        output = []
+        for r in rsb:
+            date = r['sendDt'][:8]
+            pay = format(int(r['dealWon']), ',d')
+            output.append(dict(date="{}-{}-{}".format(date[:4], date[4:6], date[6:8]), pay=pay, msg=r['lastResultMsg']))
+            # sorted(xx, key=itemgetter('')
+        return sorted(output, key=lambda k: k['date'])

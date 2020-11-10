@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from datetime import timedelta
-
 from taxdoc import LoginSession, default_config, ResultRecord
 import os
 from taxdoc.document_builder import DocumentBuilder
@@ -53,11 +52,13 @@ def login():
             member_id = _tax_api.get_member_id(user_name, user_phone)
             if member_id is not None:
                 r = _tax_api.get_pay_result(member_id)
+                rd = _tax_api.get_pay_default_list(member_id)
                 if not r:
                     return render_template('error.html', msg="소득공제 데이터가 존재하지 않습니다.")
                 else:
                     session['member_id'] = member_id
                     session['result'] = r
+                    session['detail'] = rd
                     session['user_name'] = user_name
                     session['user_phone'] = user_phone
                 return redirect(url_for('index'))
@@ -99,7 +100,8 @@ def index():
         return render_template("login.html")
     else:
         user_name = session.get("user_name")
-        return render_template("index.html", user_name=user_name, year=_tax_api.year)
+        detail = session.get('detail')
+        return render_template("index.html", user_name=user_name, year=_tax_api.year, detail=detail)
 
 
 if __name__ == '__main__':
@@ -112,4 +114,4 @@ if __name__ == '__main__':
                       year=os.environ.get("TAX_DOC_YEAR"))
     _document_builder = DocumentBuilder(config)
     app.secret_key = os.environ.get("TAX_DOC_KEY") or "123"
-    app.run(host='0.0.0.0', port='10080')
+    app.run(host='0.0.0.0', port='10080', debug=True)
