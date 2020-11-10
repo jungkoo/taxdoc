@@ -83,7 +83,19 @@ class LoginSession:
             raise Exception("LOGIN ERROR (loginid={})".format(self._user_id))
 
     def post(self, url, **data):
-        return self._login_session.post(url, headers=self._header, data=data)
+        retries = 3
+        while retries:
+            try:
+                res = self._login_session.post(url, headers=self._header, data=data)
+                res.json()
+                return res
+            except BaseException as e:
+                last_connection_exception = e
+                retries -= 1
+                self._login_session = requests.session()
+                self._authentication()
+                print("세션 종료 재접속 시도 {} - {}/3".format(e, 3-retries))
+        raise last_connection_exception
 
     def result_list_generator(self, url, **data):
         res = self.post(url, **data)
