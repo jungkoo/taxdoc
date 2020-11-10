@@ -12,9 +12,9 @@ def user_key(name, phone_number, magic_key="123"):
     :param magic_key: 해쉬값 영향을 주는 매직키
     :return:
     """
-    seed = "{}-{}-{}".format(name, normalized_phone_number(phone_number), magic_key)
+    seed = "{},{},{}".format(name, normalized_phone_number(phone_number), magic_key)
     hash_result = sha256(seed.encode('utf-8')).hexdigest()
-    return hash_result
+    return hash_result.upper()
 
 
 def normalized_phone_number(src_text):
