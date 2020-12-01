@@ -6,9 +6,9 @@ import os
 from taxdoc.document_builder import DocumentBuilder
 from flask import Flask, request, send_from_directory, after_this_request, render_template, session, redirect, url_for
 from taxdoc.tax_api import TaxApi
-# from tornado.wsgi import WSGIContainer
-# from tornado.httpserver import HTTPServer
-# from tornado.ioloop import IOLoop
+from tornado.wsgi import WSGIContainer
+from tornado.httpserver import HTTPServer
+from tornado.ioloop import IOLoop
 from taxdoc.user_key import normalized_phone_number, user_key
 
 _document_builder = None
@@ -111,6 +111,15 @@ def index():
 
 
 if __name__ == '__main__':
+    """
+    # 독커 이미지 빌드
+    docker build -t taxdoc .
+    
+    # 독커실행
+    CONFIG_PATH=/Users/tost/IdeaProjects/taxdoc/conf
+    docker run -p 10080:10080 -v ${CONFIG_PATH}:/config -e TAX_DOC_KEY=123 -e TAX_DOC_YEAR=2020 taxdoc
+    """
+    #
     # os.environ["TAX_DOC_CONFIG"] = "/Users/tost/IdeaProjects/taxdoc/conf"
     # os.environ["TAX_DOC_YEAR"] = "2020"
     # os.environ["TAX_DOC_KEY"] = "123"
@@ -120,8 +129,6 @@ if __name__ == '__main__':
                       year=os.environ.get("TAX_DOC_YEAR"))
     _document_builder = DocumentBuilder(config)
     app.secret_key = os.environ.get("TAX_DOC_KEY")
-    app.run(host='0.0.0.0', port='10080', debug=True)
-
-    # http_server = HTTPServer(WSGIContainer(app))
-    # http_server.listen(10080)
-    # IOLoop.instance().start()
+    http_server = HTTPServer(WSGIContainer(app))
+    http_server.listen(10080)
+    IOLoop.instance().start()
