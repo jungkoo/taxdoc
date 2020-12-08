@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import configparser
 import os
-from taxdoc import default_config, document_style, sign_path, ResultRecord
+from taxdoc import document_style, sign_path, ResultRecord
 from reportlab.lib.pagesizes import A4, mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle, Image
 from reportlab.lib import pdfencrypt
@@ -11,18 +10,18 @@ from datetime import datetime
 
 
 class DocumentBuilder:
-    def __init__(self, config: configparser.ConfigParser):
-        self.corp_name = config["CORP"]["name"].replace("\\n", "\n")
-        self.corp_code = config["CORP"]["code"].replace("\\n", "\n")
-        self.corp_address = config["CORP"]["address"].replace("\\n", "\n")
-        self.bill_title = config["BILL"]["name"].replace("\\n", "\n")
-        self.price_type_name = config["BILL"]["name"].replace("\\n", "\n")
-        self.price_type_code = config["BILL"]["code"].replace("\\n", "\n")
-        self.price_type_contents = config["BILL"]["comment"].replace("\\n", "\n")
-        self.user_contents = config["BILL"]["contents"].replace("\\n", "\n")
-        self.group_contents = config["BILL"]["group_contents"].replace("\\n", "\n")
-        self.group_name = config["BILL"]["group_name"].replace("\\n", "\n")
-        self.doc_title = config["BILL"]["doc_title"].replace("\\n", "\n")
+    def __init__(self):
+        self.corp_name = "전국화학섬유식품\n산업노동조합"
+        self.corp_code = "107-82-63961"
+        self.corp_address = "서울 동작구 장승배기로 98 장승빌딩 5층"
+        self.bill_title = "종교단체 외\n지정기부금"
+        self.price_type_name = "종교단체 외\n지정기부금"
+        self.price_type_code = "40"
+        self.price_type_contents = "노동조합비"
+        self.user_contents = "<소득세법> 제34조, <조세특례제한법> 제73조, 제76조 및 제88조의4에 따른 기부금을 위와 같이 기부하였음을 증명하여 주시기 바랍니다."
+        self.group_contents = "위와 같이 기부금(노동조합 조합비)를 기부 받았음을 증명합니다."
+        self.group_name = "기부금 수령인 전국화학섬유식품산업노동조합"
+        self.doc_title = "노동조합비 소득공제 자료"
 
     @staticmethod
     def _head(doc_id="", title="기부금 영수증"):
@@ -110,7 +109,7 @@ class DocumentBuilder:
 
     @staticmethod
     def _price_info(price_type_name="종교단체 외\n지정기부금", price_type_code="40", price_date="시작날짜 ~ 종료날짜",
-                   price_type_contents="노동조합비", price_all="0"):
+                    price_type_contents="노동조합비", price_all="0"):
         """
         @price_type_contents : 유형
         @price_type_code : 코드
@@ -236,11 +235,6 @@ class DocumentBuilder:
         return group_check
 
     def __call__(self, result: ResultRecord):
-        def format_pay_sum(num):
-            number = str(num).replace(" ", "").replace(",", "")
-            number = int(number)
-            return "{:,}".format(number)
-
         styles = document_style()
         if not result.doc_id or len(result.doc_id) <= 0:
             raise Exception("empty 'doc_id")
@@ -285,15 +279,3 @@ class DocumentBuilder:
         doc = SimpleDocTemplate(filename, pagesize=A4, encrypt=enc, title=self.doc_title)
         doc.build([layout, ])
 
-    @classmethod
-    def default_instance(cls):
-        config: configparser.ConfigParser = default_config()
-        obj = DocumentBuilder(config)
-        return obj
-
-# if __name__ == "__main__":
-#     os.environ["TAX_DOC_CONFIG"] = "/Users/tost/IdeaProjects/taxdoc/conf"
-#     build = DocumentBuilder(document_config())
-#     r = ResultRecord(doc_id="001", user_name="길동", phone_number="010-3333-6543", user_id="820723-1111111",
-#                      user_address="", password=None, user_email="deajang@gmail.com", pay_date="2019.01 ~ 2019.12",
-#                      pay_sum="30,000")

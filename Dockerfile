@@ -16,7 +16,6 @@ COPY templates ./templates
 COPY static ./static
 COPY taxdoc ./taxdoc
 
-ENV TAX_DOC_CONFIG /config
 ENV TAX_DOC_YEAR 2019
 # command to run on container start
 CMD [ "python", "./app.py" ]

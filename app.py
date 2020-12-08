@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from datetime import timedelta
-from taxdoc import LoginSession, default_config, ResultRecord
+from taxdoc import LoginSession, ResultRecord
 import os
 from taxdoc.document_builder import DocumentBuilder
 from flask import Flask, request, send_from_directory, after_this_request, render_template, session, redirect, url_for
@@ -13,6 +13,7 @@ from taxdoc.user_key import normalized_phone_number, user_key
 
 _document_builder = None
 _tax_api = None
+_sub_name = os.environ.get("TAX_DOC_SUB_NAME") or "지회명"
 counter = 1
 
 
@@ -47,7 +48,8 @@ def logout():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
-        return render_template('login.html', code=code)
+        code = request.form["code"]
+        return render_template('login.html', code=code, sub_name=_sub_name)
     else:
         try:
             code = request.form["code"]
@@ -103,7 +105,7 @@ def download():
 def index():
     if not session.get("member_id"):
         code = request.args.get("code", "")
-        return render_template("login.html", year=_tax_api.year, code=code)
+        return render_template("login.html", year=_tax_api.year, code=code, sub_name=_sub_name)
     else:
         user_name = session.get("user_name")
         detail = session.get('detail')
@@ -117,18 +119,26 @@ if __name__ == '__main__':
     
     # 독커실행
     CONFIG_PATH=/Users/tost/IdeaProjects/taxdoc/conf
-    docker run -p 10080:10080 -v ${CONFIG_PATH}:/config -e TAX_DOC_KEY=123 -e TAX_DOC_YEAR=2020 taxdoc
+    docker run -p 10080:10080 -v ${CONFIG_PATH}:/config 디
+       -e TAX_DOC_KEY=<시크릿키> 
+       -e TAX_DOC_YEAR=<연말정산 귀속년도 yyyy>
+       -e TAX_DOC_USER=<더빌 아이디:필수> 
+       -e TAX_DOC_PASSWORD=<더빌 패스워드:필수>
+       -e TAX_DOC_SUB_NAME=<지회이름>
+       taxdoc
     """
-    #
-    # os.environ["TAX_DOC_CONFIG"] = "/Users/tost/IdeaProjects/taxdoc/conf"
-    # os.environ["TAX_DOC_YEAR"] = "2020"
-    # os.environ["TAX_DOC_KEY"] = "123"
-    config = default_config()
-    _tax_api = TaxApi(LoginSession(user_id=config["LOGIN"]["user"],
-                                   password=config["LOGIN"]["password"]),
-                      year=os.environ.get("TAX_DOC_YEAR"))
-    _document_builder = DocumentBuilder(config)
-    app.secret_key = os.environ.get("TAX_DOC_KEY")
+
+    user = os.environ.get("TAX_DOC_USER")
+    passwd = os.environ.get("TAX_DOC_PASSWORD")
+    year = os.environ.get("TAX_DOC_YEAR") or "2019"
+    key = os.environ.get("TAX_DOC_KEY") or "123"
+
+    if not user or not passwd:
+        raise Exception("[ERROR] THE BILL LOGIN : $TAX_DOC_USER , $TAX_DOC_PASSWORD")
+
+    _tax_api = TaxApi(LoginSession(user_id=user, password=passwd), year=int(year))
+    _document_builder = DocumentBuilder()
+    app.secret_key = key
     http_server = HTTPServer(WSGIContainer(app))
     http_server.listen(10080)
     IOLoop.instance().start()

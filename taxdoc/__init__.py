@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import collections
-import configparser
 import os
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
@@ -12,26 +11,18 @@ import threading
 
 _thread_local = threading.local()
 _document_style = None
-_config_path = None
-_document_config = None
+_default_doc_font = os.path.join(os.path.dirname(os.path.abspath(__file__)), "default", "font.ttf")
+_default_doc_sign = os.path.join(os.path.dirname(os.path.abspath(__file__)), "default", "sign.png")
 
 ResultRecord = collections.namedtuple("ResultRecord", 'doc_id user_name phone_number user_id password user_email pay_date pay_sum user_address')
 
 
-def config_path():
-    global _config_path
-    if _config_path:
-        return _config_path
-    _config_path = os.environ["TAX_DOC_CONFIG"] if "TAX_DOC_CONFIG" in os.environ else ""
-    return _config_path
-
-
 def sign_path():
-    return config_path() + "/sign.png"
+    return os.environ.get("TAX_DOC_SIGN") or _default_doc_sign
 
 
 def font_path():
-    return config_path() + "/font.ttf"
+    return os.environ.get("TAX_DOC_FONT") or _default_doc_font
 
 
 def document_style():
@@ -49,17 +40,6 @@ def document_style():
     styles.add(ParagraphStyle(name="sub_title", fontName="default_font", leftIndent=5))  # 기부금영수증
     _document_style = styles
     return _document_style
-
-
-def default_config():
-    global _document_config
-    if _document_config:
-        return _document_config
-    path = os.path.abspath(config_path()) + "/config.ini"
-    config = configparser.ConfigParser()
-    config.read_file(open(path))
-    _document_config = config
-    return _document_config
 
 
 class LoginSession:
@@ -123,8 +103,6 @@ class LoginSession:
     @staticmethod
     def current():
         try:
-            val = _thread_local.login_req
+            return _thread_local.login_req
         except AttributeError:
             logging.debug("current login info not found")
-        else:
-            return val
