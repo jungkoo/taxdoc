@@ -119,7 +119,7 @@ if __name__ == '__main__':
     
     # 독커실행
     CONFIG_PATH=/Users/tost/IdeaProjects/taxdoc/conf
-    docker run -p 10080:10080 -v ${CONFIG_PATH}:/config 디
+    docker run -p 10080:10080 
        -e TAX_DOC_KEY=<시크릿키> 
        -e TAX_DOC_YEAR=<연말정산 귀속년도 yyyy>
        -e TAX_DOC_USER=<더빌 아이디:필수> 
