@@ -23,7 +23,7 @@ app = Flask(__name__, static_url_path='')
 
 def code_check(user_name, phone_number, code):
     uk = user_key(user_name, phone_number, app.secret_key)
-    if code != app.secret_key and code != uk:
+    if code != uk:
         raise ValueError("CODE 값 입력이 잘못되었습니다")
 
 
