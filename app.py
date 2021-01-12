@@ -24,7 +24,7 @@ app = Flask(__name__, static_url_path='')
 def code_check(user_name, phone_number, code):
     uk = user_key(user_name, phone_number, app.secret_key)
     if code != uk:
-        print("code={}, uk={}, secret_key".format(code, uk, app.secret_key))
+        print("code={}, uk={}, secret_key={}".format(code, uk, app.secret_key))
         raise ValueError("CODE 값 입력이 잘못되었습니다: '{}'".format(code))
 
 
@@ -35,8 +35,9 @@ def make_session_permanent():
 
 
 @app.route("/code/<code>/<user_name>/<phone_number>")
-def code_create(user_name, phone_number, code):
-    return user_key(user_name, phone_number, code)
+def code_create(code, user_name, phone_number):
+    print("code={}, user_name={}, code={}".format(code, user_name, phone_number))
+    return user_key(name=user_name, phone_number=phone_number, magic_key=code)
 
 
 @app.route('/logout')
