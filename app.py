@@ -113,8 +113,10 @@ if __name__ == '__main__':
     # 독커 이미지 빌드
     docker build -t taxdoc .
     
-    # 독커실행    
-    docker run -p 10080:10080 
+    # 독커실행
+    ``    
+    SHELL_PATH=`pwd -P` ; docker run -p 10080:10080  
+       -v ${SHELL_PATH}:/history 
        -e TAX_DOC_KEY=<시크릿키> 
        -e TAX_DOC_YEAR=<연말정산 귀속년도 yyyy>
        -e TAX_DOC_USER=<더빌 아이디:필수> 
@@ -123,7 +125,7 @@ if __name__ == '__main__':
        -e TAX_DOC_DB_POST=<문서번호 구분값: 여러대의 서버를 구분하기위한값>
        -e TAX_DOC_DB=<히스토리가 저장될 경로>
        -e TAX_DOC_SIGN=<사인이미지 변경시 사용>
-       taxdoc
+       tost82/taxdoc:v2 
     """
 
     user = os.environ.get("TAX_DOC_USER")
@@ -136,7 +138,7 @@ if __name__ == '__main__':
     if not user or not passwd:
         raise Exception("[ERROR] THE BILL LOGIN : $TAX_DOC_USER , $TAX_DOC_PASSWORD")
 
-    _db = HistoryDB(head_doc_id=str(_tax_api.year)+db_post, json_path=db_path)
+    _db = HistoryDB(head_doc_id=year+db_post, json_path=db_path)
     _tax_api = TaxApi(LoginSession(user_id=user, password=passwd), year=int(year))
     _document_builder = DocumentBuilder()
     app.secret_key = key
