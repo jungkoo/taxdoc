@@ -33,6 +33,11 @@ def make_session_permanent():
     app.permanent_session_lifetime = timedelta(minutes=1)
 
 
+@app.route("/code/<code>/<user_name>/<phone_number>")
+def code_create(user_name, phone_number, code):
+    return user_key(user_name, phone_number, code)
+
+
 @app.route('/logout')
 def logout():
     session.clear()
