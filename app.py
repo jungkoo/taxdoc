@@ -5,6 +5,8 @@ from taxdoc import LoginSession, ResultRecord
 import os
 from taxdoc.document_builder import DocumentBuilder
 from flask import Flask, request, send_from_directory, after_this_request, render_template, session, redirect, url_for
+
+from taxdoc.history_db import HistoryDB
 from taxdoc.tax_api import TaxApi
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
@@ -14,15 +16,7 @@ from taxdoc.user_key import normalized_phone_number, user_key
 _document_builder = None
 _tax_api = None
 _sub_name = os.environ.get("TAX_DOC_SUB_NAME") or "지회명"
-counter = 1
-
-
-def sequence():
-    global counter
-    counter += 1
-    doc_id = "{:04d}".format(counter)
-    return doc_id
-
+_db = None
 
 app = Flask(__name__, static_url_path='')
 
@@ -80,17 +74,19 @@ def download():
     if not session.get("member_id"):
         return "다운로드 받을수 없습니다"
     r = session.get("result")
-    doc_id = "{}-{}".format(_tax_api.year, sequence())
     user_name = session.get("user_name")
     user_phone = session.get("user_phone")
     user_id = request.form["user_uniq"] if request.method == 'POST' else ""
     user_address = request.form["user_address"] if request.method == 'POST' else ""
+    key = _db.insert(user_name=user_name, user_phone=user_phone)
+    doc_id = _db.get_doc_id(key)
     file_name = "{}/{}.pdf".format(os.path.dirname((os.path.abspath(__file__))), doc_id)
     result = ResultRecord(doc_id=doc_id, user_name=user_name, phone_number=normalized_phone_number(user_phone),
                           user_id=user_id, user_address=user_address, password=None, user_email="",
                           pay_date=r.get("date_range", "-"), pay_sum=r.get("pay_sum", "0"))
     doc_id_file = "{}.pdf".format(result.doc_id)
     _document_builder.save(result=result, file_name=file_name)
+    _db.status(key=key, value="OK")
     print("[{}] name:{}, phone:{} ==> {}  ", doc_id, user_name, user_phone, result)
 
     @after_this_request
@@ -117,14 +113,16 @@ if __name__ == '__main__':
     # 독커 이미지 빌드
     docker build -t taxdoc .
     
-    # 독커실행
-    CONFIG_PATH=/Users/tost/IdeaProjects/taxdoc/conf
+    # 독커실행    
     docker run -p 10080:10080 
        -e TAX_DOC_KEY=<시크릿키> 
        -e TAX_DOC_YEAR=<연말정산 귀속년도 yyyy>
        -e TAX_DOC_USER=<더빌 아이디:필수> 
        -e TAX_DOC_PASSWORD=<더빌 패스워드:필수>
        -e TAX_DOC_SUB_NAME=<지회이름>
+       -e TAX_DOC_DB_POST=<문서번호 구분값: 여러대의 서버를 구분하기위한값>
+       -e TAX_DOC_DB=<히스토리가 저장될 경로>
+       -e TAX_DOC_SIGN=<사인이미지 변경시 사용>
        taxdoc
     """
 
@@ -132,10 +130,13 @@ if __name__ == '__main__':
     passwd = os.environ.get("TAX_DOC_PASSWORD")
     year = os.environ.get("TAX_DOC_YEAR") or "2019"
     key = os.environ.get("TAX_DOC_KEY") or "123"
+    db_path = os.environ.get("TAX_DOC_DB") or "tax_doc_history.json"
+    db_post = os.environ.get("TAX_DOC_DB_POST") or ""
 
     if not user or not passwd:
         raise Exception("[ERROR] THE BILL LOGIN : $TAX_DOC_USER , $TAX_DOC_PASSWORD")
 
+    _db = HistoryDB(head_doc_id=str(_tax_api.year)+db_post, json_path=db_path)
     _tax_api = TaxApi(LoginSession(user_id=user, password=passwd), year=int(year))
     _document_builder = DocumentBuilder()
     app.secret_key = key
