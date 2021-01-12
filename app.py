@@ -142,6 +142,7 @@ if __name__ == '__main__':
 
     if not user or not passwd:
         raise Exception("[ERROR] THE BILL LOGIN : $TAX_DOC_USER , $TAX_DOC_PASSWORD")
+    print("year={}, secret_key={}, db_path={}".format(year, key, db_path))
 
     _db = HistoryDB(head_doc_id=year+db_post, json_path=db_path)
     _tax_api = TaxApi(LoginSession(user_id=user, password=passwd), year=int(year))
