@@ -94,7 +94,7 @@ def download():
         if os.path.isfile(file_name):
             os.remove(file_name)
         return response
-    return send_from_directory(directory='', filename=doc_id_file)
+    return send_from_directory(directory='', filename=doc_id_file, as_attachment=True)
 
 
 @app.route("/", methods=['GET', 'POST'])
