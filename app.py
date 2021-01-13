@@ -93,10 +93,7 @@ def download():
     @after_this_request
     def cleanup(response):
         if os.path.isfile(file_name):
-            print("[START] remove : {}".format(file_name))
-            time.sleep(180)  # 3분뒤 삭제
             os.remove(file_name)
-            print("[END] remove : {}".format(file_name))
         return response
     return send_from_directory(directory='', filename=doc_id_file)
 
