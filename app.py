@@ -12,6 +12,7 @@ from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from taxdoc.user_key import normalized_phone_number, user_key
+import time
 
 _document_builder = None
 _tax_api = None
@@ -92,7 +93,10 @@ def download():
     @after_this_request
     def cleanup(response):
         if os.path.isfile(file_name):
+            print("[START] remove : {}".format(file_name))
+            time.sleep(180)  # 3분뒤 삭제
             os.remove(file_name)
+            print("[END] remove : {}".format(file_name))
         return response
     return send_from_directory(directory='', filename=doc_id_file)
 
