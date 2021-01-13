@@ -5,14 +5,13 @@ from taxdoc import LoginSession, ResultRecord
 import os
 from taxdoc.document_builder import DocumentBuilder
 from flask import Flask, request, send_from_directory, after_this_request, render_template, session, redirect, url_for
-
 from taxdoc.history_db import HistoryDB
 from taxdoc.tax_api import TaxApi
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from taxdoc.user_key import normalized_phone_number, user_key
-import time
+
 
 _document_builder = None
 _tax_api = None
@@ -31,7 +30,7 @@ def code_check(user_name, phone_number, code):
 @app.before_request
 def make_session_permanent():
     session.permanent = True
-    app.permanent_session_lifetime = timedelta(minutes=10)
+    app.permanent_session_lifetime = timedelta(minutes=5)
 
 
 @app.route('/logout')
