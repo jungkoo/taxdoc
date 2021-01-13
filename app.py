@@ -30,7 +30,7 @@ def code_check(user_name, phone_number, code):
 @app.before_request
 def make_session_permanent():
     session.permanent = True
-    app.permanent_session_lifetime = timedelta(minutes=1)
+    app.permanent_session_lifetime = timedelta(minutes=10)
 
 
 @app.route('/logout')
