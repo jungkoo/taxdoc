@@ -12,7 +12,7 @@ import threading
 _thread_local = threading.local()
 _document_style = None
 _default_doc_font = os.path.join(os.path.dirname(os.path.abspath(__file__)), "default", "font.ttf")
-_default_doc_sign = os.path.join(os.path.dirname(os.path.abspath(__file__)), "default", "sign.png")
+_default_doc_sign = os.path.join(os.path.dirname(os.path.abspath(__file__)), "default", "sign.jpg")
 
 ResultRecord = collections.namedtuple("ResultRecord", 'doc_id user_name phone_number user_id password user_email pay_date pay_sum user_address')
 
