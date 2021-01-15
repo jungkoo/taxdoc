@@ -15,7 +15,7 @@ class TaxApi:
         phone = phone_number.replace("-", "")
         rsb = s.result_list_generator("https://www.thebill.co.kr/cms2/cmsMemList.json", memberName=name)
         for r in rsb:
-            if r["memberName"] == name and r["hpNo"].replace("-", "") == phone:
+            if r["memberName"] == name and r["hpNo"].replace("-", "") == phone and '동의요청' not in r["statusNm"]:
                 return r["memberId"]
         return None
 
