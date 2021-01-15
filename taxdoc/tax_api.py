@@ -17,6 +17,11 @@ class TaxApi:
         for r in rsb:
             if r["memberName"] == name and r["hpNo"].replace("-", "") == phone and '동의요청' not in r["statusNm"]:
                 return r["memberId"]
+        # 퇴사자 정보는 딴 API 에서 알아낸다.
+        rsb = s.result_list_generator("https://www.thebill.co.kr/cms2/cmsPayListByMember.json", memberName=name)
+        for r in rsb:
+            if r["memberName"] == name and r["hpNo"].replace("-", "") == phone and r["accountNo"] is not None:
+                return r["memberId"]
         return None
 
     def get_pay_result(self, member_id):
