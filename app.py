@@ -87,7 +87,7 @@ def download():
     doc_id_file = "{}.pdf".format(result.doc_id)
     _document_builder.save(result=result, file_name=file_name)
     _db.status(key=key, value="OK")
-    print("[{}] name:{}, phone:{} ==> {}  ", doc_id, user_name, user_phone, result)
+    # print("[{}] name:{}, phone:{} ==> {}  ", doc_id, user_name, user_phone, result)
 
     @after_this_request
     def cleanup(response):
