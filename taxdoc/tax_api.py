@@ -43,6 +43,7 @@ class TaxApi:
         max_date = "000000"
         min_date = "999999"
         member_name = ""
+        date_range = None
         url = "https://www.thebill.co.kr/cms2/cmsInvList.json"
         rsb = s.result_list_generator(url, invoiceSt="01", startDate=start_date,
                                       endDate=end_date, memberId=member_id, setListPerPage="30")
@@ -52,6 +53,9 @@ class TaxApi:
             pay_sum += int(r['dealWon'])
             member_name = r['memberName']
             date_range = format_pay_string("{} ~ {}".format(min_date, max_date))
+
+        if date_range is None:
+            raise ValueError("가입이력은 있지만, 납부 이력이 없습니다")
 
         return dict(name=member_name, pay_sum=format(pay_sum, ',d'), date_range=date_range)
 
