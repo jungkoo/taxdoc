@@ -108,6 +108,16 @@ def index():
         return render_template("index.html", user_name=user_name, year=_tax_api.year, detail=detail)
 
 
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template('error.html', msg="페이지를 찾을수 없습니다"), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    return render_template('error.html', msg="서버 에러 발생! 담당자 문의해주세요"), 500
+
+
 if __name__ == '__main__':
     """
     # 독커 이미지 빌드
