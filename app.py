@@ -55,7 +55,7 @@ def login():
                 r = _tax_api.get_pay_result(member_id)
                 rd = _tax_api.get_pay_detail_list(member_id)
                 if not r:
-                    return render_template('error.html', msg="소득공제 데이터가 존재하지 않습니다.")
+                    return render_template('error.html', msg="납부이력이 존재하지 않습니다 (예: 유효기간만료/계좌잔고부족으로 미납)")
                 else:
                     session['member_id'] = member_id
                     session['result'] = r
@@ -64,7 +64,7 @@ def login():
                     session['user_phone'] = user_phone
                 return redirect(url_for('index'))
             else:
-                return render_template('error.html', msg="납부이력을 찾을 수 없습니다")
+                return render_template('error.html', msg="회원 정보가 없습니다 (예: CMS 미등록/전화번호 변경)")
         except ValueError as e:
             return render_template('error.html', msg=str(e))
 
