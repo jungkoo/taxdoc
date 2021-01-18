@@ -20,7 +20,8 @@ class TaxApi:
         # 퇴사자 정보는 딴 API 에서 알아낸다.
         rsb = s.result_list_generator("https://www.thebill.co.kr/cms2/cmsPayListByMember.json", memberName=name)
         for r in rsb:
-            if r["memberName"] == name and r["hpNo"].replace("-", "") == phone and r["accountNo"] is not None:
+            print(r)
+            if r["memberName"] == name and r["hpNo"].replace("-", "") == phone and "memberId" in r:
                 return r["memberId"]
         return None
 
