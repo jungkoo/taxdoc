@@ -50,14 +50,15 @@ def login():
             user_name = request.form['user_name']
             user_phone = request.form['user_phone']
             code_check(user_name=user_name, phone_number=user_phone, code=code)
-            member_id = _tax_api.get_member_id(user_name, user_phone)
-            if member_id is not None:
-                r = _tax_api.get_pay_result(member_id)
-                rd = _tax_api.get_pay_detail_list(member_id)
+            member_id_list = _tax_api.get_member_id_list(user_name, user_phone)
+            if len(member_id_list) > 0:
+                tmp = _tax_api.extract_pay_result(member_id_list=member_id_list)
+                r = _tax_api.convert_pay_result(tmp)
+                rd = _tax_api.convert_pay_detail_list(tmp)
                 if not r:
                     return render_template('error.html', msg="납부이력이 존재하지 않습니다 (예: 유효기간만료/계좌잔고부족으로 미납)")
                 else:
-                    session['member_id'] = member_id
+                    session['member_id_list'] = ",".join(member_id_list)
                     session['result'] = r
                     session['detail'] = rd
                     session['user_name'] = user_name
@@ -71,7 +72,7 @@ def login():
 
 @app.route("/download", methods=["POST"])
 def download():
-    if not session.get("member_id"):
+    if not session.get("member_id_list"):
         return "다운로드 받을수 없습니다"
     r = session.get("result")
     user_name = session.get("user_name")
@@ -87,7 +88,6 @@ def download():
     doc_id_file = "{}.pdf".format(result.doc_id)
     _document_builder.save(result=result, file_name=file_name)
     _db.status(key=key, value="OK")
-    # print("[{}] name:{}, phone:{} ==> {}  ", doc_id, user_name, user_phone, result)
 
     @after_this_request
     def cleanup(response):
@@ -99,7 +99,7 @@ def download():
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
-    if not session.get("member_id"):
+    if not session.get("member_id_list"):
         code = request.args.get("code", "")
         return render_template("login.html", year=_tax_api.year, code=code, sub_name=_sub_name)
     else:
