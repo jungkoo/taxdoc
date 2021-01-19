@@ -53,8 +53,8 @@ def login():
             member_id_list = _tax_api.get_member_id_list(user_name, user_phone)
             if len(member_id_list) > 0:
                 tmp = _tax_api.extract_pay_result(member_id_list=member_id_list)
-                r = _tax_api.convert_pay_result(tmp)
-                rd = _tax_api.convert_pay_detail_list(tmp)
+                r = TaxApi.convert_pay_result(tmp)  # pdf result
+                rd = TaxApi.convert_pay_detail_list(tmp)  # web result
                 if not r:
                     return render_template('error.html', msg="납부이력이 존재하지 않습니다 (예: 유효기간만료/계좌잔고부족으로 미납)")
                 else:
