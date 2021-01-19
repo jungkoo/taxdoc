@@ -31,7 +31,7 @@ def normalized_phone_number(src_text):
         return "{}-{}-{}".format(phone_num[0:3], phone_num[3:7], phone_num[7:11])
     if len(phone_num) == 10:
         return "{}-{}-{}".format(phone_num[0:3], phone_num[3:6], phone_num[6:10])
-    raise Exception("unknown phone number '{}'".format(src_text))
+    raise ValueError("전화번호 패턴이 이상합니다! '{}'".format(src_text))
 
 
 if __name__ == "__main__":
