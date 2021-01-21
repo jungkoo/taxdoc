@@ -75,6 +75,10 @@ def download():
     if not session.get("member_id_list"):
         return "다운로드 받을수 없습니다"
     r = session.get("result")
+    pay_sum = r.get("pay_sum", "0")
+    if pay_sum == "0":
+        raise ValueError("납부 금액이 0원 입니다.")
+
     user_name = session.get("user_name")
     user_phone = session.get("user_phone")
     user_id = request.form["user_uniq"] if request.method == 'POST' else ""
@@ -84,7 +88,7 @@ def download():
     file_name = "{}/{}.pdf".format(os.path.dirname((os.path.abspath(__file__))), doc_id)
     result = ResultRecord(doc_id=doc_id, user_name=user_name, phone_number=normalized_phone_number(user_phone),
                           user_id=user_id, user_address=user_address, password=None, user_email="",
-                          pay_date=r.get("date_range", "-"), pay_sum=r.get("pay_sum", "0"))
+                          pay_date=r.get("date_range", "-"), pay_sum=pay_sum)
     doc_id_file = "{}.pdf".format(result.doc_id)
     _document_builder.save(result=result, file_name=file_name)
     _db.status(key=key, value="OK")
