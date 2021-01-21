@@ -71,8 +71,8 @@ class TaxApi:
         pay_sum = 0
         max_date = "000000"
         min_date = "999999"
-        member_name = ""
-        date_range = None
+        member_name = "-"
+        date_range = "없음"
         for r in pay_result:
             if r["invoice"] != "01":
                 continue  # 정상납부 아니면 스킵
@@ -81,8 +81,6 @@ class TaxApi:
             pay_sum += r['pay']
             member_name = r['name']
             date_range = format_pay_string("{} ~ {}".format(min_date, max_date))
-        if date_range is None:
-            raise ValueError("가입이력은 있지만, 납부 이력이 없습니다")
         return dict(name=member_name, pay_sum=format(pay_sum, ',d'), date_range=date_range)
 
     @staticmethod
