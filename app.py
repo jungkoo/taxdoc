@@ -77,7 +77,7 @@ def download():
     r = session.get("result")
     pay_sum = r.get("pay_sum", "0")
     if pay_sum == "0":
-        raise ValueError("납부 금액이 0원 입니다.")
+        return render_template('error.html', msg="납부금액이 0원 입니다")
 
     user_name = session.get("user_name")
     user_phone = session.get("user_phone")
