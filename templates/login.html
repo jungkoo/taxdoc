@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="공동성명">
+    <meta name="generator" content="Jekyll v4.1.1">
+    <title>조합비 연말정산 서류발급 (로그인)</title>
+    <link rel="canonical" href="https://getbootstrap.com/docs/4.5/examples/sign-in/">
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <!-- Bootstrap core CSS -->
+    <link href="{{url_for('static', filename = 'css/bootstrap.min.css')}}" rel="stylesheet">
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
+    <!-- Custom styles for this template -->
+    <link href="{{url_for('static', filename = 'signin.css')}}" rel="stylesheet">
+  </head>
+  <body class="text-center">
+<form class="form-signin" method="post" action="/login">
+  <h1 class="h3 mb-3 font-weight-normal">연말정산({{year}}년 귀속)</h1>
+  <label class="sr-only">이름</label>
+  <input type="text" id="inputName" name="user_name" class="form-control" placeholder="이름 (예: 홍길동)" required autofocus>
+  <label class="sr-only">전화번호</label>
+  <input type="text" id="inputPhoneNumber" name="user_phone" class="form-control" placeholder="전화번호 (예: 010-1234-5678)" required autofocus>
+  <label class="sr-only">코드번호</label>
+  <input type="{% if code=='' %}password{% else %}hidden{%endif%}" name="code" class="form-control" pattern="[A-Za-z0-9_]*" placeholder="코드번호 (개인별 코드)" value="{{code}}" required>
+  <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+  <p class="mt-5 mb-3 text-muted">{{sub_name}}</p>
+</form>
+</body>
+</html>
