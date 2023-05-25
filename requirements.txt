@@ -3,6 +3,6 @@ setuptools~=50.3.0
 html-table-parser-python3>=0.1.5
 reportlab>=3.5.53
 requests
-tornado==6.1
+tornado==6.3.2
 tinydb
 Flask
